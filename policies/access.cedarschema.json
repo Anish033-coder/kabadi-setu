@@ -1,0 +1,19 @@
+{
+  "": {
+    "entityTypes": {
+      "Household": {},
+      "PickupLink": {"shape": {"type": "Record", "attributes": {"requestId": {"type": "String"}}}},
+      "Request": {"shape": {"type": "Record", "attributes": {
+        "owner": {"type": "Entity", "name": "Household"},
+        "requestId": {"type": "String"}
+      }}}
+    },
+    "actions": {
+      "view": {"appliesTo": {"principalTypes": ["Household", "PickupLink"], "resourceTypes": ["Request"]}},
+      "cancel": {"appliesTo": {"principalTypes": ["Household"], "resourceTypes": ["Request"]}},
+      "collect": {"appliesTo": {"principalTypes": ["Household", "PickupLink"], "resourceTypes": ["Request"]}},
+      "accept": {"appliesTo": {"principalTypes": ["PickupLink"], "resourceTypes": ["Request"]}},
+      "reject": {"appliesTo": {"principalTypes": ["PickupLink"], "resourceTypes": ["Request"]}}
+    }
+  }
+}

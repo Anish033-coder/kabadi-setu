@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08.1",
+  "version": "2026-10-08.2",
   "status": "prototype guidance; local acceptance unverified",
   "source": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2219676",
   "items": [
@@ -119,9 +119,10 @@
       "icon": "care",
       "check_clean": false,
       "candidate": false,
-      "stream": "special_care",
-      "guidance": "Keep sharp glass safely contained and separate. Ask your local waste service how to hand it over safely.",
-      "guidance_hi": "नुकीला काँच सुरक्षित डिब्बे में अलग रखें। स्थानीय कचरा सेवा से सुरक्षित तरीके से देने की जानकारी लें।"
+      "stream": "dry",
+      "guidance": "Wrap broken glass in thick paper or a box, mark it ‘sharp’, and keep it out of the scrap basket. Ask your local waste service how they collect it.",
+      "guidance_hi": "टूटे काँच को मोटे कागज़ या डिब्बे में लपेटें, उस पर ‘नुकीला’ लिखें और कबाड़ की टोकरी से बाहर रखें। स्थानीय कचरा सेवा से पूछें कि वे इसे कैसे लेते हैं।",
+      "rule_note": "Not on the special-care list in published SWM Rules 2026 summaries, so treated as dry waste, wrapped and marked sharp. Confirm with Jaipur Municipal Corporation guidance."
     },
     {
       "id": "battery",
@@ -131,9 +132,10 @@
       "icon": "care",
       "check_clean": false,
       "candidate": false,
-      "stream": "unresolved",
+      "stream": "special_care",
       "guidance": "Keep batteries out of mixed scrap. Do not crush or open them. Use an authorised battery collection route.",
-      "guidance_hi": "बैटरियाँ सामान्य कबाड़ से अलग रखें। इन्हें तोड़ें या खोलें नहीं। अधिकृत बैटरी संग्रह सेवा का उपयोग करें।"
+      "guidance_hi": "बैटरियाँ सामान्य कबाड़ से अलग रखें। इन्हें तोड़ें या खोलें नहीं। अधिकृत बैटरी संग्रह सेवा का उपयोग करें।",
+      "rule_note": "Published SWM Rules 2026 summaries list batteries under special-care waste."
     },
     {
       "id": "electronics",
@@ -143,9 +145,10 @@
       "icon": "care",
       "check_clean": false,
       "candidate": false,
-      "stream": "unresolved",
+      "stream": "e_waste",
       "guidance": "Keep electronics separate. Use an authorised e-waste collection route; erase personal data where safe.",
-      "guidance_hi": "इलेक्ट्रॉनिक कचरा अलग रखें। अधिकृत ई-कचरा संग्रह सेवा चुनें; जहाँ सुरक्षित हो निजी डेटा मिटाएँ।"
+      "guidance_hi": "इलेक्ट्रॉनिक कचरा अलग रखें। अधिकृत ई-कचरा संग्रह सेवा चुनें; जहाँ सुरक्षित हो निजी डेटा मिटाएँ।",
+      "rule_note": "Covered by the E-Waste (Management) Rules, 2022, separately from the four SWM streams."
     },
     {
       "id": "bulb",

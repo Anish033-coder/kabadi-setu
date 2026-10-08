@@ -27,6 +27,12 @@ def action_key(value):
     return value
 
 
+REPLY_WINDOW = 48 * 3600
+PICKUP_WINDOW = 7 * 24 * 3600
+# DynamoDB TTL only cleans up old records; expiry decisions are always made in code.
+RECORD_LIFETIME = 90 * 24 * 3600
+
+
 class Service:
     def __init__(self, repository, catalogue, secret, clock=time.time):
         self.repo, self.catalogue, self.secret, self.clock = repository, catalogue, secret, clock
@@ -72,6 +78,12 @@ class Service:
     def token(self, request_id):
         return hmac.new(self.secret.encode(), request_id.encode(), hashlib.sha256).hexdigest()
 
+    def replay_create(self, owner, receipt, fingerprint):
+        if receipt['fingerprint'] != fingerprint:
+            raise Problem(409, 'This action ID was already used with different items.')
+        doc = self.get(receipt['id'], owner=owner)
+        return {**doc, 'token': self.token(doc['id'])}
+
     def create(self, owner, body, key):
         key = action_key(key)
         rows = self.basket(body.get('items'))
@@ -82,17 +94,21 @@ class Service:
         receipt_key = 'CREATE#' + owner + '#' + key
         old = self.repo.get(receipt_key)
         if old:
-            if old['fingerprint'] != fingerprint:
-                raise Problem(409, 'This action ID was already used with different items.')
-            doc = self.get(old['id'], owner=owner)
-            return {**doc, 'token': self.token(doc['id'])}
+            return self.replay_create(owner, old, fingerprint)
         now = int(self.clock())
         request_id = str(uuid.uuid4())
         doc = {'id': request_id, 'owner': owner, 'items': rows, 'language': language,
-               'status': 'awaiting_response', 'version': 1, 'created_at': now, 'expires_at': now + 48 * 3600,
+               'status': 'awaiting_response', 'version': 1, 'created_at': now, 'expires_at': now + REPLY_WINDOW,
                'rule_version': self.catalogue['version'], 'token_hash': digest(self.token(request_id)),
-               'events': [{'action': 'created', 'source': 'household', 'at': now}]}
-        self.repo.create_request(doc, receipt_key, {'id': request_id, 'fingerprint': fingerprint})
+               'events': [{'action': 'created', 'source': 'household', 'at': now}], 'ttl': now + RECORD_LIFETIME}
+        try:
+            self.repo.create_request(doc, receipt_key, {'id': request_id, 'fingerprint': fingerprint, 'ttl': now + RECORD_LIFETIME})
+        except Conflict:
+            # A double tap can reach us twice at once; if the other copy committed, return its result.
+            old = self.repo.get(receipt_key)
+            if not old:
+                raise
+            return self.replay_create(owner, old, fingerprint)
         return {**self.public(doc), 'token': self.token(request_id)}
 
     def authorised(self, request_id, owner=None, token=None):
@@ -102,14 +118,18 @@ class Service:
         if owner and hmac.compare_digest(doc['owner'], owner):
             return doc, 'household'
         if isinstance(token, str) and len(token) == 64 and hmac.compare_digest(doc['token_hash'], digest(token)):
-            if doc['expires_at'] <= self.clock() or doc['status'] == 'cancelled':
+            if self.deadline(doc) <= self.clock() or doc['status'] == 'cancelled':
                 raise Problem(410, 'This link has expired or was cancelled.')
             return doc, 'pickup_link'
         raise Problem(404, 'Request not found.')
 
+    def deadline(self, doc):
+        # The reply window covers an unanswered request; acceptance opens a separate pickup window.
+        return doc.get('pickup_until') or doc['expires_at']
+
     def public(self, doc):
-        public = {k: v for k, v in doc.items() if k not in ('owner', 'token_hash')}
-        if public['expires_at'] <= self.clock() and public['status'] in ('awaiting_response', 'accepted'):
+        public = {k: v for k, v in doc.items() if k not in ('owner', 'token_hash', 'ttl')}
+        if public['status'] in ('awaiting_response', 'accepted') and self.deadline(public) <= self.clock():
             public['status'] = 'expired'
         return public
 
@@ -119,6 +139,11 @@ class Service:
         check_access(doc, source, 'view', owner)
         return self.public(doc)
 
+    def replay_action(self, receipt, fingerprint):
+        if receipt['fingerprint'] != fingerprint:
+            raise Problem(409, 'This action ID was used for a different operation.')
+        return receipt['result']
+
     def act(self, request_id, body, key, owner=None, token=None):
         from .access import check_access
         doc, source = self.authorised(request_id, owner, token)
@@ -127,9 +152,7 @@ class Service:
         fingerprint = digest(json.dumps({'action': body.get('action'), 'version': body.get('version')}, sort_keys=True))
         old = self.repo.get(receipt_key)
         if old:
-            if old['fingerprint'] != fingerprint:
-                raise Problem(409, 'This action ID was used for a different operation.')
-            return old['result']
+            return self.replay_action(old, fingerprint)
         if type(body.get('version')) is not int or body['version'] != doc['version']:
             raise Conflict()
         state = self.public(doc)['status']
@@ -139,8 +162,17 @@ class Service:
         next_state = transitions.get(state, {}).get(body.get('action'))
         if not next_state:
             raise Problem(409, 'That action is not available for this request.')
+        now = int(self.clock())
         updated = {**doc, 'status': next_state, 'version': doc['version'] + 1,
-                   'events': [*doc['events'], {'action': body['action'], 'source': source, 'at': int(self.clock())}]}
+                   'events': [*doc['events'], {'action': body['action'], 'source': source, 'at': now}]}
+        if next_state == 'accepted':
+            updated['pickup_until'] = now + PICKUP_WINDOW
         result = self.public(updated)
-        self.repo.transition(updated, doc['version'], receipt_key, {'fingerprint': fingerprint, 'result': result})
+        try:
+            self.repo.transition(updated, doc['version'], receipt_key, {'fingerprint': fingerprint, 'result': result, 'ttl': now + RECORD_LIFETIME})
+        except Conflict:
+            old = self.repo.get(receipt_key)
+            if not old:
+                raise
+            return self.replay_action(old, fingerprint)
         return result

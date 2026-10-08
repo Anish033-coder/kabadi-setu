@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: KabadiSetu - household sorting guidance and pickup requests (Jaipur prototype)
+
+Parameters:
+  LinkSecretParameterName:
+    Type: String
+    Default: /kabadi-setu/link-secret
+    Description: SSM SecureString holding the pickup-link HMAC secret. Create it before the first deploy (make secret).
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: '*'
+    Description: Browser origins allowed to call the API. Narrow this to the Amplify URL once it exists.
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: kabadi-setu-households
+      UserPoolTier: LITE
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: false
+          RequireUppercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UserPoolTags:
+        project: kabadi-setu
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: kabadi-setu-web
+      GenerateSecret: false
+      ExplicitAuthFlows: [ALLOW_USER_PASSWORD_AUTH, ALLOW_REFRESH_TOKEN_AUTH]
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 7
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      # Cleanup only. Expiry decisions are made in code because TTL deletion can lag by days.
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: project
+          Value: kabadi-setu
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /kabadi-setu/api
+      RetentionInDays: 14
+      Tags:
+        - Key: project
+          Value: kabadi-setu
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+              audience:
+                - !Ref UserPoolClient
+      CorsConfiguration:
+        AllowOrigins: !Ref AllowedOrigins
+        AllowHeaders: [authorization, content-type, idempotency-key]
+        AllowMethods: [GET, POST, OPTIONS]
+        MaxAge: 600
+      Tags:
+        project: kabadi-setu
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # make package assembles backend/, data/ and policies/ here so the Lambda keeps the repo layout.
+      CodeUri: .build/lambda
+      Handler: backend.app.handler
+      Runtime: python3.14
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 10
+      LoggingConfig:
+        LogGroup: !Ref ApiLogGroup
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+          LINK_SECRET_PARAM: !Ref LinkSecretParameterName
+          POWERTOOLS_SERVICE_NAME: kabadi-setu
+          POWERTOOLS_LOG_LEVEL: INFO
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LinkSecretParameterName}
+      Tags:
+        project: kabadi-setu
+      Events:
+        Health:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/health, Method: GET, Auth: {Authorizer: NONE}}
+        Catalogue:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/catalogue, Method: GET, Auth: {Authorizer: NONE}}
+        PickupView:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/pickup/view, Method: POST, Auth: {Authorizer: NONE}}
+        PickupAction:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/pickup/action, Method: POST, Auth: {Authorizer: NONE}}
+        Decide:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/decide, Method: POST}
+        GetBasket:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/basket, Method: GET}
+        SaveBasket:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/basket, Method: POST}
+        CreateRequest:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/requests, Method: POST}
+        RequestDetails:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: '/api/requests/{request_id}', Method: GET}
+        HouseholdAction:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: '/api/requests/{request_id}/actions', Method: POST}
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+  Region:
+    Value: !Ref AWS::Region

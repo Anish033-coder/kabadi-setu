@@ -1,0 +1,4 @@
+aws-lambda-powertools==3.35.0
+boto3==1.43.109
+cedarpy==4.12.1
+pillow==12.3.0

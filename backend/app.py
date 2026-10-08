@@ -13,10 +13,18 @@ logger = Logger(service='kabadi-setu')
 app = APIGatewayHttpResolver()
 _service = None
 
+def link_secret():
+    # Local runs set LINK_SECRET directly. On AWS the secret lives in SSM Parameter Store, not in the template.
+    if os.getenv('LINK_SECRET'):
+        return os.environ['LINK_SECRET']
+    import boto3
+    ssm = boto3.client('ssm', region_name=os.getenv('AWS_REGION', 'ap-south-1'))
+    return ssm.get_parameter(Name=os.environ['LINK_SECRET_PARAM'], WithDecryption=True)['Parameter']['Value']
+
 def service():
     global _service
     if _service is None:
-        secret = os.environ['LINK_SECRET']
+        secret = link_secret()
         if os.getenv('LOCAL_MEMORY') == '1':
             repo = MemoryRepository()
         else:
@@ -96,11 +104,13 @@ def pickup_action():
 
 def handler(event, context):
     started = time.perf_counter()
+    # One ID per request ties together its timing, errors and (later) model usage.
+    logger.set_correlation_id(event.get('requestContext', {}).get('requestId'))
     try:
         response = app.resolve(event, context)
-    except Exception:
-        # No request body, credentials, token, phone number or full URL enters general logs.
-        logger.error('unhandled_request_error')
+    except Exception as error:
+        # Only the exception class is logged: no request body, credentials, token, phone number or full URL.
+        logger.error('unhandled_request_error', extra={'error_type': type(error).__name__})
         response = {'statusCode': 500, 'body': json.dumps({'error': 'Something went wrong. Please try again.'})}
     response.setdefault('headers', {}).update({'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'Content-Type': 'application/json'})
     logger.info('request_completed', extra={'route': event.get('routeKey', 'unknown'), 'status': response['statusCode'],

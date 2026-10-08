@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "kabadi-setu"
+
+[default.build.parameters]
+# Native wheels (cedarpy, pillow, pydantic-core) must be built for Linux arm64, not macOS.
+use_container = true
+
+[default.deploy.parameters]
+region = "ap-south-1"
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+confirm_changeset = true
+tags = "project=\"kabadi-setu\""

@@ -13,7 +13,8 @@ def check_access(doc, source, action, owner=None):
         {'uid': principal, 'attrs': {'requestId': doc['id']} if kind == 'PickupLink' else {}, 'parents': []},
         {'uid': resource, 'attrs': {'owner': {'__entity': {'type': 'Household', 'id': doc['owner']}}, 'requestId': doc['id']}, 'parents': []}
     ]
+    # Link validity (hash match, expiry, cancellation) is checked before this call in Service.authorised.
     result = cedarpy.is_authorized({'principal': principal, 'action': {'type': 'Action', 'id': action}, 'resource': resource,
-                                   'context': {'linkValid': source == 'pickup_link'}}, POLICIES, entities)
+                                   'context': {}}, POLICIES, entities)
     if not result.allowed:
         raise Problem(403, 'This action is not permitted.')

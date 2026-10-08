@@ -32,6 +32,16 @@ class MemoryRepository:
             self.rows[receipt_key] = copy.deepcopy(receipt)
 
 
+def ensure_table(client, table):
+    """Create the local table with the same key schema as template.yaml (DynamoDB Local and tests only)."""
+    if table in client.list_tables()['TableNames']:
+        return
+    client.create_table(TableName=table, BillingMode='PAY_PER_REQUEST',
+                        AttributeDefinitions=[{'AttributeName': 'pk', 'AttributeType': 'S'}],
+                        KeySchema=[{'AttributeName': 'pk', 'KeyType': 'HASH'}])
+    client.get_waiter('table_exists').wait(TableName=table)
+
+
 class DynamoRepository:
     def __init__(self, client, table):
         self.client, self.table = client, table
@@ -40,6 +50,8 @@ class DynamoRepository:
         result = {'pk': {'S': key}, 'document': {'S': json.dumps(value, ensure_ascii=False)}}
         if 'version' in value:
             result['version'] = {'N': str(value['version'])}
+        if isinstance(value.get('ttl'), int):
+            result['ttl'] = {'N': str(value['ttl'])}
         return result
 
     def get(self, key):

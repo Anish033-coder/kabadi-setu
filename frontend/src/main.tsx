@@ -7,14 +7,27 @@ type Row={id:string;en:string;hi:string;quantity:number;answers:{clean?:string}}
 type RequestRecord={id:string;items:Row[];language:string;status:string;version:number;expires_at:number;events:{action:string;source:string;at:number}[];token?:string};
 type Route={stream:string;eligible:boolean;reason:string;reason_hi:string};
 const env=(import.meta as any).env;
-let accessToken='';
+let accessToken='',refreshToken='';
 const endpoint=env.VITE_API_URL||'';
+async function cognito(action:string,payload:unknown){
+  return fetch(`https://cognito-idp.${env.VITE_AWS_REGION}.amazonaws.com/`,{method:'POST',headers:{'Content-Type':'application/x-amz-json-1.1','X-Amz-Target':`AWSCognitoIdentityProviderService.${action}`},body:JSON.stringify(payload)});
+}
+// Access tokens last an hour; renew once from the in-memory refresh token instead of failing mid-session.
+async function renewSession(){
+  if(!refreshToken)return false;
+  const response=await cognito('InitiateAuth',{ClientId:env.VITE_COGNITO_CLIENT_ID,AuthFlow:'REFRESH_TOKEN_AUTH',AuthParameters:{REFRESH_TOKEN:refreshToken}});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.AuthenticationResult?.AccessToken){refreshToken='';return false}
+  accessToken=result.AuthenticationResult.AccessToken;return true;
+}
 async function api(path:string,body?:unknown,key?:string){
-  const response=await fetch(endpoint+'/api'+path,{method:body===undefined?'GET':'POST',credentials:endpoint?'omit':'same-origin',headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{}),...(accessToken?{Authorization:'Bearer '+accessToken}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const send=()=>fetch(endpoint+'/api'+path,{method:body===undefined?'GET':'POST',credentials:endpoint?'omit':'same-origin',headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{}),...(accessToken?{Authorization:'Bearer '+accessToken}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  let response=await send();
+  if(response.status===401&&await renewSession())response=await send();
   const data=await response.json(); if(!response.ok)throw new Error(data.error||'Request failed. Please try again.'); return data;
 }
 function Icon({kind='leaf'}:{kind?:string}){return <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{kind==='paper'?<><path d="M8 5h13l4 4v18H8zM21 5v5h4M12 14h9M12 18h9M12 22h6"/></>:kind==='box'?<><path d="m4 11 12-6 12 6v15H4zM4 11l12 6 12-6M16 17v9M10 8l12 6"/></>:kind==='bottle'?<><path d="M13 4h6v7l4 5v11H9V16l4-5zM13 8h6M9 19h14"/></>:kind==='can'?<><ellipse cx="16" cy="7" rx="8" ry="3"/><path d="M8 7v18c0 4 16 4 16 0V7M12 12v11M20 12v11"/></>:kind==='care'?<><path d="m16 4 13 23H3zM16 12v7M16 23h.01"/></>:<><path d="M26 5C8 3 4 11 8 21c10 4 18-2 18-16ZM6 27 22 10M12 20v-7M17 15h6"/></>}</g></svg>}
-const names:Record<string,[string,string]>={awaiting_response:['Awaiting response','जवाब की प्रतीक्षा'],accepted:['Accepted','स्वीकार किया'],rejected:['Declined','मना किया'],cancelled:['Cancelled','रद्द किया'],expired:['Expired','समय समाप्त'],collection_reported:['Collection reported','संग्रह की सूचना'],wet:['Wet waste','गीला कचरा'],dry:['Dry waste','सूखा कचरा'],sanitary:['Sanitary waste','सैनिटरी कचरा'],special_care:['Special care','विशेष देखभाल'],unresolved:['Needs a closer look','और जाँच ज़रूरी']};
+const names:Record<string,[string,string]>={awaiting_response:['Awaiting response','जवाब की प्रतीक्षा'],accepted:['Accepted','स्वीकार किया'],rejected:['Declined','मना किया'],cancelled:['Cancelled','रद्द किया'],expired:['Expired','समय समाप्त'],collection_reported:['Collection reported','संग्रह की सूचना'],wet:['Wet waste','गीला कचरा'],dry:['Dry waste','सूखा कचरा'],sanitary:['Sanitary waste','सैनिटरी कचरा'],special_care:['Special care','विशेष देखभाल'],e_waste:['E-waste','ई-कचरा'],unresolved:['Needs a closer look','और जाँच ज़रूरी']};
 function App(){
   const [lang,setLang]=useState<'en'|'hi'>('en');const t=(en:string,hi:string)=>lang==='en'?en:hi;
   const [items,setItems]=useState<Item[]>([]),[basket,setBasket]=useState<Row[]>([]),[search,setSearch]=useState(''),[group,setGroup]=useState('All');
@@ -37,9 +50,9 @@ function App(){
     if(!region||!client)throw new Error('Cloud sign-in is not configured yet.');
     const action=authMode==='signup'?'SignUp':authMode==='verify'?'ConfirmSignUp':'InitiateAuth';
     const payload=authMode==='signup'?{ClientId:client,Username:email,Password:password,UserAttributes:[{Name:'email',Value:email}]}:authMode==='verify'?{ClientId:client,Username:email,ConfirmationCode:code}:{ClientId:client,AuthFlow:'USER_PASSWORD_AUTH',AuthParameters:{USERNAME:email,PASSWORD:password}};
-    const response=await fetch(`https://cognito-idp.${region}.amazonaws.com/`,{method:'POST',headers:{'Content-Type':'application/x-amz-json-1.1','X-Amz-Target':`AWSCognitoIdentityProviderService.${action}`},body:JSON.stringify(payload)});
+    const response=await cognito(action,payload);
     const result=await response.json();if(!response.ok)throw new Error(result.message||'Sign-in failed.');
-    if(authMode==='signup'){setAuthMode('verify');setNotice('Check your email for the verification code.')}else if(authMode==='verify'){setAuthMode('login');setNotice('Email verified. You can sign in.')}else{if(!result.AuthenticationResult?.AccessToken)throw new Error('This account needs an additional sign-in step.');accessToken=result.AuthenticationResult.AccessToken;setSignedIn(true);setPassword('')}
+    if(authMode==='signup'){setAuthMode('verify');setNotice('Check your email for the verification code.')}else if(authMode==='verify'){setAuthMode('login');setNotice('Email verified. You can sign in.')}else{if(!result.AuthenticationResult?.AccessToken)throw new Error('This account needs an additional sign-in step.');accessToken=result.AuthenticationResult.AccessToken;refreshToken=result.AuthenticationResult.RefreshToken||'';setSignedIn(true);setPassword('')}
   })}
   function select(item:Item){setChosen(item);setCondition('');setRoute(null);setError('')}
   async function decide(value:string){setCondition(value);if(chosen)await run(async()=>setRoute(await api('/decide',{id:chosen.id,answers:{clean:value}})))}

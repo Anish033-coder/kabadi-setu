@@ -4,8 +4,8 @@ from pathlib import Path
 from threading import Barrier
 from uuid import uuid4
 import pytest
-from backend.domain import Service, Problem
-from backend.repository import MemoryRepository, DynamoRepository
+from backend.domain import Service, Problem, REPLY_WINDOW, PICKUP_WINDOW
+from backend.repository import MemoryRepository, DynamoRepository, ensure_table
 
 CATALOGUE = json.loads((Path(__file__).parents[1] / 'data/catalogue.json').read_text())
 ITEM = {'id': 'newspaper', 'quantity': 2, 'answers': {'clean': 'yes'}}
@@ -21,6 +21,7 @@ def service(request):
             client.list_tables()
         except Exception:
             pytest.skip('DynamoDB Local must be running on port 8000')
+        ensure_table(client, 'kabadi-setu-local')
         repo = DynamoRepository(client, 'kabadi-setu-local')
     return Service(repo, CATALOGUE, 'test-secret', clock=lambda: 1000)
 
@@ -102,3 +103,39 @@ def test_pickup_token_does_not_authorize_household_cancel(service):
     doc = create(service)
     with pytest.raises(Problem):
         service.act(doc['id'], {'action': 'cancel', 'version': 1}, str(uuid4()), token=doc['token'])
+
+def test_accepted_request_can_be_collected_after_the_reply_window(service):
+    doc = create(service)
+    accepted = service.act(doc['id'], {'action': 'accept', 'version': 1}, str(uuid4()), token=doc['token'])
+    assert accepted['pickup_until'] == 1000 + PICKUP_WINDOW
+    service.clock = lambda: 1000 + REPLY_WINDOW + 3600
+    collected = service.act(doc['id'], {'action': 'collect', 'version': 2}, str(uuid4()), token=doc['token'])
+    assert collected['status'] == 'collection_reported'
+
+def test_accepted_request_expires_after_the_pickup_window(service):
+    doc = create(service)
+    service.act(doc['id'], {'action': 'accept', 'version': 1}, str(uuid4()), token=doc['token'])
+    service.clock = lambda: 1000 + PICKUP_WINDOW
+    assert service.get(doc['id'], owner='alice')['status'] == 'expired'
+    with pytest.raises(Problem, match='expired'):
+        service.get(doc['id'], token=doc['token'])
+
+def test_simultaneous_duplicate_action_returns_one_result(service):
+    doc = create(service)
+    key, barrier = str(uuid4()), Barrier(2)
+    def tap(_):
+        barrier.wait()
+        return service.act(doc['id'], {'action': 'accept', 'version': 1}, key, token=doc['token'])
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, second = pool.map(tap, range(2))
+    assert first == second
+    assert len(service.get(doc['id'], owner='alice')['events']) == 2
+
+def test_simultaneous_duplicate_create_returns_one_request(service):
+    key, barrier = str(uuid4()), Barrier(2)
+    def tap(_):
+        barrier.wait()
+        return service.create('alice', {'items': [ITEM]}, key)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, second = pool.map(tap, range(2))
+    assert first['id'] == second['id'] and first['token'] == second['token']
