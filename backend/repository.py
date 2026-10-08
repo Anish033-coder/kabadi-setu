@@ -2,7 +2,10 @@
 import copy
 import json
 import threading
-from .domain import Conflict
+import time
+import random
+import uuid
+from .domain import Conflict, Problem
 
 
 class MemoryRepository:
@@ -62,11 +65,25 @@ class DynamoRepository:
         self.client.put_item(TableName=self.table, Item=self.item(key, value))
 
     def write(self, operations):
-        try:
-            self.client.transact_write_items(TransactItems=operations)
-        except self.client.exceptions.TransactionCanceledException as error:
-            # Do not blindly replay a stale user decision. The caller reloads current state.
-            raise Conflict() from error
+        # Reuse the exact transaction and token after temporary contention.
+        # Never reload a newer version and apply an old user decision to it.
+        token = str(uuid.uuid4())
+        for attempt in range(4):
+            try:
+                self.client.transact_write_items(TransactItems=operations, ClientRequestToken=token)
+                return
+            except self.client.exceptions.TransactionCanceledException as error:
+                reasons = {reason.get('Code') for reason in error.response.get('CancellationReasons', [])}
+                reasons -= {None, 'None'}
+                if reasons and reasons <= {'ConditionalCheckFailed', 'TransactionConflict'}:
+                    if 'ConditionalCheckFailed' in reasons:
+                        raise Conflict() from error
+                    if attempt < 3:
+                        time.sleep(random.uniform(0.025, 0.05) * (2 ** attempt))
+                        continue
+                    raise Problem(503, 'The request is busy. Retry the same action in a moment.') from error
+                # Validation, permissions and capacity failures are not stale user decisions.
+                raise
 
     def create_request(self, doc, receipt_key, receipt):
         self.write([{'Put': {'TableName': self.table, 'Item': self.item('REQUEST#' + doc['id'], doc), 'ConditionExpression': 'attribute_not_exists(pk)'}},
