@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Account-wide spending alerts for the KabadiSetu prototype; notifications are not a spending cap.
+Parameters:
+  AlertEmail:
+    Type: String
+    AllowedPattern: '[^\s@]+@[^\s@]+\.[^\s@]+'
+Resources:
+  SpendingBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: kabadi-setu-account-safety
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: {Amount: 10, Unit: USD}
+        # Account-wide so unactivated cost tags cannot hide new service charges.
+        # Credits/refunds must not conceal gross usage while testing.
+        CostTypes:
+          IncludeCredit: false
+          IncludeRefund: false
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: ABSOLUTE_VALUE
+            Threshold: 1
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: ABSOLUTE_VALUE
+            Threshold: 5
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            ThresholdType: ABSOLUTE_VALUE
+            Threshold: 10
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
