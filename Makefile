@@ -1,7 +1,13 @@
+AWS_PROFILE ?= kabadi-setu
+export AWS_PROFILE
+
 LAMBDA_SRC := .build/lambda
 PYTHON := .venv/bin/python
+SAM := $(if $(wildcard .tools-venv/bin/sam),.tools-venv/bin/sam,sam)
+export SAM_CLI_TELEMETRY := 0
+export __SAM_CLI_APP_DIR := $(CURDIR)/.local/sam
 
-.PHONY: package build deploy secret local-db test
+.PHONY: package build deploy preflight secret local-db test
 
 # Copy only what the Lambda needs, keeping the backend/data/policies layout the code expects.
 package:
@@ -11,15 +17,17 @@ package:
 	find $(LAMBDA_SRC) -name __pycache__ -prune -exec rm -rf {} +
 
 build: package
-	sam build
+	$(SAM) build
 
-deploy: build
-	sam deploy
+preflight:
+	$(PYTHON) scripts/aws_identity.py
+
+deploy: preflight build
+	$(SAM) deploy
 
 # One-time: store the pickup-link secret in SSM Parameter Store, never in the template or repo.
 secret:
-	aws ssm put-parameter --name /kabadi-setu/link-secret --type SecureString \
-		--value "$$($(PYTHON) -c 'import secrets; print(secrets.token_hex(32))')"
+	$(PYTHON) scripts/create_secret.py
 
 local-db:
 	docker start kabadi-setu-dynamodb 2>/dev/null || docker run -d --name kabadi-setu-dynamodb -p 127.0.0.1:8000:8000 amazon/dynamodb-local:latest

@@ -1,6 +1,7 @@
 version = 0.1
 
 [default.global.parameters]
+profile = "kabadi-setu"
 stack_name = "kabadi-setu"
 
 [default.build.parameters]

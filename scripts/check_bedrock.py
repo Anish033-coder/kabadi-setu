@@ -8,15 +8,20 @@ import time
 from io import BytesIO
 import boto3
 from PIL import Image
+from aws_identity import require_non_root
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', default='apac.amazon.nova-lite-v1:0')
 parser.add_argument('--region', default='ap-south-1')
+parser.add_argument('--allow-paid-call', action='store_true', help='Explicitly enable this one billable test call')
 args = parser.parse_args()
+if not args.allow_paid_call:
+    parser.error('Model calls can cost money. Add --allow-paid-call only after reviewing billing controls.')
+session = require_non_root()
 
 image = BytesIO()
 Image.new('RGB', (64, 64), (40, 120, 70)).save(image, format='JPEG')
-client = boto3.client('bedrock-runtime', region_name=args.region)
+client = session.client('bedrock-runtime', region_name=args.region)
 started = time.perf_counter()
 try:
     response = client.converse(modelId=args.model, inferenceConfig={'maxTokens': 20},
