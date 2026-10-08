@@ -1,5 +1,6 @@
 """Upload the static frontend to the configured Amplify app without a Git push."""
 import json
+import os
 import subprocess
 import zipfile
 from pathlib import Path
@@ -19,13 +20,21 @@ def main():
         for path in (ROOT/'frontend/dist').rglob('*'):
             if path.is_file(): bundle.write(path,path.relative_to(ROOT/'frontend/dist'))
     amplify=session.client('amplify',region_name='ap-south-1')
-    deployment=amplify.create_deployment(appId=hosting['app_id'],branchName=hosting['branch'])
+    pending=ROOT/'.local/pending-hosting-upload.json'
+    if pending.exists():
+        deployment=json.loads(pending.read_text())
+    else:
+        deployment=amplify.create_deployment(appId=hosting['app_id'],branchName=hosting['branch'])
+        fd=os.open(pending,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,'w') as file: json.dump(deployment,file)
     # The signed upload URL is kept in memory and never printed.
-    request=Request(deployment['zipUploadUrl'],data=archive.read_bytes(),method='PUT',headers={'Content-Type':'application/zip'})
-    with urlopen(request,timeout=60) as response:
-        assert response.status==200
+    # Same-object PUT retries are safe; keep signed URLs out of process arguments.
+    subprocess.run(['curl','--fail','--silent','--show-error','--connect-timeout','10','--max-time','60',
+                    '--retry','2','--retry-all-errors','--upload-file',str(archive),'--config','-'],
+                   input='url = "'+deployment['zipUploadUrl']+'"\n',text=True,check=True)
     amplify.start_deployment(appId=hosting['app_id'],branchName=hosting['branch'],jobId=deployment['jobId'])
     (ROOT/'.local/hosting-job.json').write_text(json.dumps({'job_id':deployment['jobId']})+'\n')
+    pending.unlink()
     print('Frontend deployment started:',hosting['origin'])
 
 if __name__=='__main__': main()

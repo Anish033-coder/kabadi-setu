@@ -19,3 +19,9 @@ Use each incident as a demo explanation: show the user-visible problem, the smal
 - The IAM test initially attempted to transform a local CodeUri; SAM packaging normally converts it to S3. The test now uses a dummy artifact URI while preserving the actual policies.
 - Read-only Bedrock metadata reports region and entitlement AVAILABLE but authorization NOT_AUTHORIZED. Recognition remains disabled; no plan upgrade was attempted.
 - Some AWS HTTPS requests timed out during hosting setup. Reads and deployment status are checked before retrying mutations; no duplicate app was created.
+
+## 2026-10-08T23:02:27+05:30 — hosting recovery and clean installation
+
+The first Amplify uploader lost its signed-upload state after a TLS failure. Re-running created another pending job, which prevented a third deployment. Both unstarted jobs were explicitly stopped. The uploader now saves pending upload state locally with mode 0600 and uses bounded retries of the same object upload; nothing sensitive is committed.
+
+A fresh clone installed and passed the full tests/build. The browser tool reported ERR_INTERNET_DISCONNECTED while some shell-based AWS operations still completed, so browser availability is tracked separately from AWS stack status.

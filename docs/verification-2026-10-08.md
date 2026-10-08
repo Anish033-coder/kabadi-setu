@@ -33,3 +33,16 @@ Public frontend hosting, physical-phone browser testing and image recognition re
 - Mumbai `ap-south-1`, `apac.amazon.nova-lite-v1:0`: ValidationException, “Operation not allowed”.
 - US fallback `us-east-1`, `amazon.nova-lite-v1:0`: same error.
 - Both probes used a generated 64×64 solid-colour JPEG, max output 20 tokens; neither returned token usage or recognition output. Charges cannot be inferred from that absence. No accuracy conclusion is possible. No account upgrade or capacity purchase was made.
+
+
+## Resumed implementation — 2026-10-08T23:02:27+05:30
+
+- Eight additional topic commits were made locally after d67f042; no GitHub push.
+- Recognition implementation: 63 backend tests pass, including DynamoDB Local concurrent quota tests, ownership, exact-byte input and saved results after ambiguous failure. Bedrock is mocked in these tests.
+- Source and SAM-transformed IAM checks pass; permissions use exact resources apart from the necessary project-photo object prefix and project log streams. No wildcard actions or account-wide Resource:* permissions.
+- A fresh local clone with a newly installed Python environment and npm ci passed all 63 backend tests, five frontend tests and the production build. No integration tests skipped.
+- Lambda container build passed; AWS backend stack reached UPDATE_COMPLETE with recognition disabled. Amplify origin is configured and route throttles were raised to 5/10 in the deployed template.
+- An email-suppressed demo user was created; credentials remain in ignored .local files.
+- Amplify upload attempts hit TLS errors and left pending jobs; those pending jobs were stopped before a controlled retry. The in-app browser reported ERR_INTERNET_DISCONNECTED, so no successful browser walkthrough or physical-phone/mobile-data test is claimed.
+- npm audit reports low-severity findings for esbuild and Vite, with no fix available in its report. No automatic dependency upgrade was attempted.
+- Real-photo accuracy, inference cost, mobile-data behavior and final submission remain unverified. No submission tag yet.
