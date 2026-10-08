@@ -1,83 +1,1095 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {createRoot} from 'react-dom/client';
-import './style.css';
+import React, { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import "./style.css";
+import { createApi, actionIds } from "./api.js";
 
-type Item={id:string;en:string;hi:string;group:string;icon:string;check_clean:boolean};
-type Row={id:string;en:string;hi:string;quantity:number;answers:{clean?:string}};
-type RequestRecord={id:string;items:Row[];language:string;status:string;version:number;expires_at:number;events:{action:string;source:string;at:number}[];token?:string};
-type Route={stream:string;eligible:boolean;reason:string;reason_hi:string};
-const env=(import.meta as any).env;
-let accessToken='',refreshToken='';
-const endpoint=env.VITE_API_URL||'';
-async function cognito(action:string,payload:unknown){
-  return fetch(`https://cognito-idp.${env.VITE_AWS_REGION}.amazonaws.com/`,{method:'POST',headers:{'Content-Type':'application/x-amz-json-1.1','X-Amz-Target':`AWSCognitoIdentityProviderService.${action}`},body:JSON.stringify(payload)});
+type Item = {
+  id: string;
+  en: string;
+  hi: string;
+  group: string;
+  icon: string;
+  check_clean: boolean;
+};
+type Row = {
+  id: string;
+  en: string;
+  hi: string;
+  quantity: number;
+  answers: { clean?: string };
+};
+type RequestRecord = {
+  id: string;
+  items: Row[];
+  language: string;
+  status: string;
+  version: number;
+  expires_at: number;
+  pickup_until?: number;
+  events: { action: string; source: string; at: number }[];
+  token?: string;
+};
+type Route = {
+  stream: string;
+  eligible: boolean;
+  reason: string;
+  reason_hi: string;
+};
+const env = (import.meta as any).env;
+const endpoint = env.VITE_API_URL || "";
+const client = createApi({
+  endpoint,
+  region: env.VITE_AWS_REGION,
+  clientId: env.VITE_COGNITO_CLIENT_ID,
+  onSessionExpired: () => window.dispatchEvent(new Event("session-expired")),
+});
+const { api, cognito } = client;
+function Icon({ kind = "leaf" }: { kind?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <g
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {kind === "paper" ? (
+          <>
+            <path d="M8 5h13l4 4v18H8zM21 5v5h4M12 14h9M12 18h9M12 22h6" />
+          </>
+        ) : kind === "box" ? (
+          <>
+            <path d="m4 11 12-6 12 6v15H4zM4 11l12 6 12-6M16 17v9M10 8l12 6" />
+          </>
+        ) : kind === "bottle" ? (
+          <>
+            <path d="M13 4h6v7l4 5v11H9V16l4-5zM13 8h6M9 19h14" />
+          </>
+        ) : kind === "can" ? (
+          <>
+            <ellipse cx="16" cy="7" rx="8" ry="3" />
+            <path d="M8 7v18c0 4 16 4 16 0V7M12 12v11M20 12v11" />
+          </>
+        ) : kind === "care" ? (
+          <>
+            <path d="m16 4 13 23H3zM16 12v7M16 23h.01" />
+          </>
+        ) : (
+          <>
+            <path d="M26 5C8 3 4 11 8 21c10 4 18-2 18-16ZM6 27 22 10M12 20v-7M17 15h6" />
+          </>
+        )}
+      </g>
+    </svg>
+  );
 }
-// Access tokens last an hour; renew once from the in-memory refresh token instead of failing mid-session.
-async function renewSession(){
-  if(!refreshToken)return false;
-  const response=await cognito('InitiateAuth',{ClientId:env.VITE_COGNITO_CLIENT_ID,AuthFlow:'REFRESH_TOKEN_AUTH',AuthParameters:{REFRESH_TOKEN:refreshToken}});
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.AuthenticationResult?.AccessToken){refreshToken='';return false}
-  accessToken=result.AuthenticationResult.AccessToken;return true;
+const names: Record<string, [string, string]> = {
+  awaiting_response: ["Awaiting response", "जवाब की प्रतीक्षा"],
+  accepted: ["Accepted", "स्वीकार किया"],
+  rejected: ["Declined", "मना किया"],
+  cancelled: ["Cancelled", "रद्द किया"],
+  expired: ["Expired", "समय समाप्त"],
+  collection_reported: ["Collection reported", "संग्रह की सूचना"],
+  wet: ["Wet waste", "गीला कचरा"],
+  dry: ["Dry waste", "सूखा कचरा"],
+  sanitary: ["Sanitary waste", "सैनिटरी कचरा"],
+  special_care: ["Special care", "विशेष देखभाल"],
+  e_waste: ["E-waste", "ई-कचरा"],
+  unresolved: ["Needs a closer look", "और जाँच ज़रूरी"],
+};
+function App() {
+  const [lang, setLang] = useState<"en" | "hi">("en");
+  const t = (en: string, hi: string) => (lang === "en" ? en : hi);
+  const [items, setItems] = useState<Item[]>([]),
+    [basket, setBasket] = useState<Row[]>([]),
+    [search, setSearch] = useState(""),
+    [group, setGroup] = useState("All");
+  const [chosen, setChosen] = useState<Item | null>(null),
+    [condition, setCondition] = useState(""),
+    [route, setRoute] = useState<Route | null>(null);
+  const [tab, setTab] = useState("sort"),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [notice, setNotice] = useState("");
+  const [request, setRequest] = useState<RequestRecord | null>(null),
+    [phone, setPhone] = useState(""),
+    [consent, setConsent] = useState(false);
+  const [mode, setMode] = useState("loading"),
+    [signedIn, setSignedIn] = useState(!endpoint),
+    [authMode, setAuthMode] = useState("login");
+  const [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [code, setCode] = useState("");
+  const [requestIds, setRequestIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ks-requests") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const createKey = useRef(crypto.randomUUID());
+  const pendingActions = useRef(actionIds());
+  const linkState = useRef(new URLSearchParams(location.hash.slice(1)));
+  const recipient = location.pathname === "/r";
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  useEffect(() => {
+    const expired = () => {
+      setSignedIn(false);
+      setAuthMode("login");
+      setBasket([]);
+      setRequest(null);
+      setError("Your session expired. Sign in again to continue.");
+    };
+    window.addEventListener("session-expired", expired);
+    return () => window.removeEventListener("session-expired", expired);
+  }, []);
+  useEffect(() => {
+    api("/health")
+      .then((x) => setMode(x.mode))
+      .catch(() => setMode("unavailable"));
+    api("/catalogue")
+      .then((x) => setItems(x.items))
+      .catch((e) => setError(e.message));
+  }, []);
+  useEffect(() => {
+    if (signedIn && !recipient)
+      api("/basket")
+        .then((x) => setBasket(x.items))
+        .catch((e) => setError(e.message));
+  }, [signedIn]);
+  useEffect(() => {
+    if (recipient)
+      run(async () =>
+        setRequest(
+          await api("/pickup/view", {
+            id: linkState.current.get("id"),
+            token: linkState.current.get("t"),
+          }),
+        ),
+      );
+  }, []);
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await fn();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function auth() {
+    await run(async () => {
+      const region = env.VITE_AWS_REGION,
+        client = env.VITE_COGNITO_CLIENT_ID;
+      if (!region || !client)
+        throw new Error("Cloud sign-in is not configured yet.");
+      const action =
+        authMode === "signup"
+          ? "SignUp"
+          : authMode === "verify"
+            ? "ConfirmSignUp"
+            : "InitiateAuth";
+      const payload =
+        authMode === "signup"
+          ? {
+              ClientId: client,
+              Username: email,
+              Password: password,
+              UserAttributes: [{ Name: "email", Value: email }],
+            }
+          : authMode === "verify"
+            ? { ClientId: client, Username: email, ConfirmationCode: code }
+            : {
+                ClientId: client,
+                AuthFlow: "USER_PASSWORD_AUTH",
+                AuthParameters: { USERNAME: email, PASSWORD: password },
+              };
+      const response = await cognito(action, payload);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Sign-in failed.");
+      if (authMode === "signup") {
+        setAuthMode("verify");
+        setNotice("Check your email for the verification code.");
+      } else if (authMode === "verify") {
+        setAuthMode("login");
+        setNotice("Email verified. You can sign in.");
+      } else {
+        if (!result.AuthenticationResult?.AccessToken)
+          throw new Error("This account needs an additional sign-in step.");
+        client.setSession(result.AuthenticationResult);
+        setSignedIn(true);
+        setPassword("");
+      }
+    });
+  }
+  function select(item: Item) {
+    setChosen(item);
+    setCondition("");
+    setRoute(null);
+    setError("");
+  }
+  async function decide(value: string) {
+    setCondition(value);
+    if (chosen)
+      await run(async () =>
+        setRoute(
+          await api("/decide", { id: chosen.id, answers: { clean: value } }),
+        ),
+      );
+  }
+  async function updateBasket(next: Row[]) {
+    await run(async () => {
+      const saved = await api("/basket", { items: next });
+      setBasket(saved.items);
+      createKey.current = crypto.randomUUID();
+    });
+  }
+  async function add() {
+    if (!chosen || !route?.eligible) return;
+    const existing = basket.find((i) => i.id === chosen.id);
+    if (existing) {
+      setNotice(
+        t(
+          "Already in your basket. Adjust the count there.",
+          "पहले से टोकरी में है। वहीं मात्रा बदलें।",
+        ),
+      );
+      return;
+    }
+    await updateBasket([
+      ...basket,
+      {
+        id: chosen.id,
+        en: chosen.en,
+        hi: chosen.hi,
+        quantity: 1,
+        answers: { clean: condition },
+      },
+    ]);
+    setChosen(null);
+    setNotice(t("Added to your basket.", "टोकरी में जोड़ दिया।"));
+  }
+  async function create() {
+    await run(async () => {
+      const result = await api(
+        "/requests",
+        { items: basket, language: lang },
+        createKey.current,
+      );
+      setRequest(result);
+      setTab("request");
+      const ids = [result.id, ...requestIds.filter((id) => id !== result.id)];
+      setRequestIds(ids);
+      localStorage.setItem("ks-requests", JSON.stringify(ids));
+      setConsent(false);
+    });
+  }
+  async function action(action: string) {
+    if (!request) return;
+    await run(async () => {
+      const key = pendingActions.current.get(
+        request.id,
+        request.version,
+        action,
+      );
+      setRequest(
+        await api(
+          recipient ? "/pickup/action" : `/requests/${request.id}/actions`,
+          {
+            id: request.id,
+            token: recipient ? linkState.current.get("t") : undefined,
+            action,
+            version: request.version,
+          },
+          key,
+        ),
+      );
+    });
+  }
+  async function refresh() {
+    if (!request) return;
+    await run(async () =>
+      setRequest(
+        recipient
+          ? await api("/pickup/view", {
+              id: request.id,
+              token: linkState.current.get("t"),
+            })
+          : await api(`/requests/${request.id}`),
+      ),
+    );
+  }
+  const link = request?.token
+    ? `${location.origin}/r#id=${request.id}&t=${request.token}`
+    : "";
+  const message = request
+    ? [
+        t(
+          "Hello! I have these clean, dry scrap items in Jaipur:",
+          "नमस्ते! जयपुर में मेरे पास यह साफ़ और सूखा कबाड़ है:",
+        ),
+        ...request.items.map(
+          (i) => `• ${lang === "en" ? i.en : i.hi} × ${i.quantity}`,
+        ),
+        t(
+          "Counts are estimates. Do you take these items? Please confirm rates and a suitable time. We can arrange the address in this chat.",
+          "मात्रा अनुमानित है। क्या आप ये चीज़ें लेते हैं? कृपया दर और समय बताएँ। पता इसी चैट में तय करेंगे।",
+        ),
+        link ? t("View and respond: ", "अनुरोध देखें: ") + link : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
+  const digits = phone.replace(/[\s()+-]/g, "");
+  const validPhone = /^[1-9]\d{7,14}$/.test(digits);
+  const visible = items.filter(
+    (i) =>
+      (group === "All" || i.group === group) &&
+      `${i.en} ${i.hi}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  const label = (value: string) =>
+    names[value]?.[lang === "en" ? 0 : 1] || value;
+  return (
+    <div className="app">
+      <header>
+        <a className="brand" href="/">
+          <span className="brand-icon">
+            <Icon />
+          </span>
+          Kabadi<span>Setu</span>
+          <small>कबाड़ी सेतु</small>
+        </a>
+        <div className="header-right">
+          <span className="locality">
+            ● {t("Jaipur · prototype", "जयपुर · प्रोटोटाइप")}
+          </span>
+          <button
+            className="language"
+            onClick={() => setLang(lang === "en" ? "hi" : "en")}
+          >
+            {lang === "en" ? "हिन्दी" : "English"} <span>↔</span>
+          </button>
+        </div>
+      </header>
+      <div className="environment">
+        {mode === "local"
+          ? t(
+              "LOCAL TEST · No AWS calls. Pickup links work only on this computer.",
+              "स्थानीय परीक्षण · AWS कॉल नहीं। लिंक केवल इसी कंप्यूटर पर काम करते हैं।",
+            )
+          : mode === "aws"
+            ? t(
+                "PROTOTYPE · Collector acceptance and physical collection are unverified.",
+                "प्रोटोटाइप · कबाड़ी की स्वीकृति और वास्तविक संग्रह की पुष्टि नहीं हुई है।",
+              )
+            : t("Connecting to the application…", "ऐप से जुड़ रहे हैं…")}
+      </div>
+      {!recipient && (
+        <nav aria-label="Main navigation">
+          {[
+            ["sort", "01", t("Sort an item", "सामान छाँटें")],
+            ["basket", "02", t("Your basket", "आपकी टोकरी")],
+            ["request", "03", t("Pickup requests", "अनुरोध")],
+          ].map(([id, n, title]) => (
+            <button
+              className={tab === id ? "active" : ""}
+              key={id}
+              onClick={() => setTab(id)}
+            >
+              <span>{n}</span>
+              {title}
+              {id === "basket" && <b>{basket.length}</b>}
+            </button>
+          ))}
+        </nav>
+      )}
+      <main>
+        <div role="alert" className={error ? "alert error" : "hidden"}>
+          {error}
+        </div>
+        <div role="status" className={notice ? "alert" : "hidden"}>
+          {notice}
+        </div>
+        {!signedIn && !recipient ? (
+          <section className="panel login">
+            <p className="eyebrow">YOUR HOUSEHOLD, YOUR BASKET</p>
+            <h1>
+              {authMode === "signup"
+                ? "Create your account"
+                : authMode === "verify"
+                  ? "Verify your email"
+                  : "Welcome back."}
+            </h1>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                auth();
+              }}
+            >
+              <label>
+                Email
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              {authMode === "verify" ? (
+                <label>
+                  Verification code
+                  <input
+                    required
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
+                </label>
+              ) : (
+                <label>
+                  Password
+                  <input
+                    type="password"
+                    required
+                    minLength={12}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </label>
+              )}
+              <button className="primary" disabled={busy}>
+                Continue →
+              </button>
+            </form>
+            <button
+              className="text-button"
+              onClick={() =>
+                setAuthMode(authMode === "login" ? "signup" : "login")
+              }
+            >
+              {authMode === "login"
+                ? "New here? Create an account"
+                : "Back to sign in"}
+            </button>
+          </section>
+        ) : recipient ? (
+          <section className="request-layout">
+            <div>
+              <p className="eyebrow">
+                {t("PICKUP REQUEST", "कबाड़ लेने का अनुरोध")}
+              </p>
+              <h1>
+                {t(
+                  "A little scrap.\nA useful next stop.",
+                  "थोड़ा कबाड़।\nएक उपयोगी अगला कदम।",
+                )}
+              </h1>
+              <p className="intro">
+                {t(
+                  "Review the items below. Arrange rates, location and timing directly in your WhatsApp conversation.",
+                  "सामान देखें। दर, पता और समय अपनी WhatsApp चैट में तय करें।",
+                )}
+              </p>
+            </div>
+            {request && (
+              <RequestView
+                request={request}
+                recipient
+                busy={busy}
+                label={label}
+                t={t}
+                action={action}
+                refresh={refresh}
+              />
+            )}
+          </section>
+        ) : tab === "sort" ? (
+          <>
+            <section className="hero">
+              <div>
+                <p className="eyebrow">
+                  {t(
+                    "SMALL HABITS. LESS MIXED WASTE.",
+                    "छोटी आदतें। कम मिला-जुला कचरा।",
+                  )}
+                </p>
+                <h1>
+                  {t(
+                    "Give your scrap\na better next stop.",
+                    "अपने कबाड़ को\nसही जगह पहुँचाएँ।",
+                  )}
+                </h1>
+                <p className="intro">
+                  {t(
+                    "Know what goes where. Keep the useful things together. Ask your kabadiwala when they can collect.",
+                    "जानें क्या कहाँ जाएगा। उपयोगी सामान अलग रखें। अपने कबाड़ी से लेने का समय पूछें।",
+                  )}
+                </p>
+                <div className="hero-notes">
+                  <span>✓ {t("Simple sorting", "आसान छँटाई")}</span>
+                  <span>✓ {t("Your own WhatsApp", "आपका WhatsApp")}</span>
+                </div>
+              </div>
+              <div className="illustration" aria-hidden="true">
+                <span className="orbit">↗</span>
+                <div className="scrap paper">
+                  <Icon kind="paper" />
+                </div>
+                <div className="scrap bottle">
+                  <Icon kind="bottle" />
+                </div>
+                <div className="scrap box">
+                  <Icon kind="box" />
+                </div>
+                <div className="basket-art">
+                  <span>कबाड़ी सेतु</span>
+                  <strong>
+                    GOOD THINGS
+                    <br />
+                    GO AROUND.
+                  </strong>
+                </div>
+                <span className="art-note">sort today. save for later.</span>
+              </div>
+            </section>
+            <section className="workspace">
+              <div className="catalogue panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">
+                      {t("START WITH ONE ITEM", "एक सामान से शुरू करें")}
+                    </p>
+                    <h2>
+                      {t("What are you sorting?", "आप क्या छाँट रहे हैं?")}
+                    </h2>
+                  </div>
+                  <span className="count">
+                    {items.length} {t("items", "वस्तुएँ")}
+                  </span>
+                </div>
+                <label className="search">
+                  <span>⌕</span>
+                  <input
+                    aria-label={t("Search items", "सामान खोजें")}
+                    placeholder={t(
+                      "Try newspaper, bottle, battery…",
+                      "अख़बार, बोतल, बैटरी खोजें…",
+                    )}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </label>
+                <div className="filters">
+                  {["All", "Paper", "Plastic", "Metal", "Glass", "Other"].map(
+                    (g, i) => (
+                      <button
+                        key={g}
+                        className={group === g ? "selected" : ""}
+                        onClick={() => setGroup(g)}
+                      >
+                        {t(
+                          g,
+                          ["सभी", "कागज़", "प्लास्टिक", "धातु", "काँच", "अन्य"][
+                            i
+                          ],
+                        )}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <div className="item-grid">
+                  {visible.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => select(item)}
+                      className={
+                        "item-card " + (chosen?.id === item.id ? "chosen" : "")
+                      }
+                    >
+                      <span className={"item-icon " + item.group.toLowerCase()}>
+                        <Icon kind={item.icon} />
+                      </span>
+                      <strong>{lang === "en" ? item.en : item.hi}</strong>
+                      <span className="item-arrow">↗</span>
+                    </button>
+                  ))}
+                </div>
+                {!visible.length && (
+                  <p>
+                    {t(
+                      "No matching item. Choose “Something else / unsure”.",
+                      "सामान नहीं मिला। “कुछ और / पता नहीं” चुनें।",
+                    )}
+                  </p>
+                )}
+              </div>
+              <aside>
+                {chosen ? (
+                  <section className="panel review">
+                    <p className="eyebrow">
+                      {t("CHECK BEFORE YOU ADD", "जोड़ने से पहले जाँचें")}
+                    </p>
+                    <h2>{lang === "en" ? chosen.en : chosen.hi}</h2>
+                    {chosen.check_clean ? (
+                      <>
+                        <p>
+                          {t(
+                            "Is it empty, clean and dry? Only select yes if it did not contain hazardous material.",
+                            "क्या यह खाली, साफ़ और सूखा है? खतरनाक सामग्री थी तो हाँ न चुनें।",
+                          )}
+                        </p>
+                        <div className="answers">
+                          {[
+                            ["yes", "Yes", "हाँ"],
+                            ["no", "No", "नहीं"],
+                            ["unsure", "Unsure", "पता नहीं"],
+                          ].map(([v, en, hi]) => (
+                            <button
+                              disabled={busy}
+                              className={condition === v ? "selected" : ""}
+                              onClick={() => decide(v)}
+                              key={v}
+                            >
+                              {t(en, hi)}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => decide("unsure")}
+                      >
+                        {t("Show guidance", "निर्देश देखें")}
+                      </button>
+                    )}
+                    {route && (
+                      <div
+                        className={
+                          "guidance " + (route.eligible ? "positive" : "")
+                        }
+                      >
+                        <span className="eyebrow">{label(route.stream)}</span>
+                        <p>{lang === "en" ? route.reason : route.reason_hi}</p>
+                        {route.eligible && (
+                          <button
+                            className="primary"
+                            disabled={busy}
+                            onClick={add}
+                          >
+                            {t("Add to basket", "टोकरी में जोड़ें")} +
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      className="text-button"
+                      onClick={() => setChosen(null)}
+                    >
+                      {t("Choose a different item", "दूसरा सामान चुनें")}
+                    </button>
+                  </section>
+                ) : (
+                  <section className="panel how">
+                    <div className="round-leaf">
+                      <Icon />
+                    </div>
+                    <h2>
+                      {t(
+                        "A basket,\nnot a mixed bin.",
+                        "एक टोकरी,\nमिला-जुला कचरा नहीं।",
+                      )}
+                    </h2>
+                    <p>
+                      {t(
+                        "Choose an item to see where it belongs. Only suitable, confirmed items can join your pickup basket.",
+                        "सामान चुनकर उसका सही तरीका जानें। केवल उपयुक्त और जाँचा हुआ सामान टोकरी में जोड़ें।",
+                      )}
+                    </p>
+                    <ol>
+                      <li>{t("Identify and check", "पहचानें और जाँचें")}</li>
+                      <li>{t("Keep it separate", "अलग रखें")}</li>
+                      <li>{t("Ask before pickup", "लेने से पहले पूछें")}</li>
+                    </ol>
+                  </section>
+                )}
+                <section className="photo-note">
+                  <span>◎</span>
+                  <div>
+                    <strong>
+                      {t("Photo recognition is next", "फोटो पहचान अगला चरण है")}
+                    </strong>
+                    <p>
+                      {t(
+                        "This working baseline uses manual selection. No model calls or AI charges.",
+                        "इस शुरुआती संस्करण में मैनुअल चयन है। कोई AI कॉल या शुल्क नहीं।",
+                      )}
+                    </p>
+                  </div>
+                </section>
+              </aside>
+            </section>
+          </>
+        ) : tab === "basket" ? (
+          <section className="basket-layout">
+            <div>
+              <p className="eyebrow">
+                {t("SET ASIDE, READY TO ASK", "अलग रखा, पूछने के लिए तैयार")}
+              </p>
+              <h1>{t("Your little\ncollection.", "आपका छोटा\nसंग्रह।")}</h1>
+              <p className="intro">
+                {t(
+                  "Counts are estimates, not weights. Your collector confirms acceptance, rates and the final amount.",
+                  "ये अनुमानित गिनती हैं, वजन नहीं। कबाड़ी स्वीकृति, दर और अंतिम राशि बताएँगे।",
+                )}
+              </p>
+              <button className="text-button" onClick={() => setTab("sort")}>
+                ← {t("Add more items", "और सामान जोड़ें")}
+              </button>
+            </div>
+            <section className="panel">
+              {!basket.length ? (
+                <div className="empty">
+                  <Icon kind="box" />
+                  <h2>{t("Start with one item.", "एक सामान से शुरू करें।")}</h2>
+                  <p>{t("Your basket is empty.", "आपकी टोकरी खाली है।")}</p>
+                  <button className="primary" onClick={() => setTab("sort")}>
+                    {t("Find an item", "सामान खोजें")} →
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2>{t("Saved for pickup", "उठवाने के लिए रखा")}</h2>
+                  {basket.map((row) => (
+                    <div className="basket-row" key={row.id}>
+                      <div>
+                        <strong>{lang === "en" ? row.en : row.hi}</strong>
+                        <small>
+                          {t(
+                            "Clean & dry · estimated count",
+                            "साफ़ और सूखा · अनुमानित गिनती",
+                          )}
+                        </small>
+                      </div>
+                      <input
+                        aria-label={`${row.en} count`}
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={row.quantity}
+                        disabled={busy}
+                        onChange={(e) => {
+                          const q = Number(e.target.value);
+                          if (q >= 1 && q <= 99)
+                            updateBasket(
+                              basket.map((i) =>
+                                i.id === row.id ? { ...i, quantity: q } : i,
+                              ),
+                            );
+                        }}
+                      />
+                      <button
+                        aria-label={"Remove " + row.en}
+                        className="remove"
+                        disabled={busy}
+                        onClick={() =>
+                          updateBasket(basket.filter((i) => i.id !== row.id))
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <div className="quote-note">
+                    {t(
+                      "Rates and minimums are unknown. We’ll prepare a quote request, not promise a sale.",
+                      "दर और न्यूनतम मात्रा अज्ञात हैं। हम दर पूछने का अनुरोध बनाएँगे, बिक्री का वादा नहीं।",
+                    )}
+                  </div>
+                  <button
+                    className="primary wide"
+                    onClick={create}
+                    disabled={busy}
+                  >
+                    {busy
+                      ? t("Saving…", "सहेज रहे हैं…")
+                      : t("Prepare pickup request", "अनुरोध तैयार करें")}{" "}
+                    →
+                  </button>
+                </>
+              )}
+            </section>
+          </section>
+        ) : (
+          <section>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">
+                  {t("KEEP THE LOOP VISIBLE", "अनुरोध की स्थिति जानें")}
+                </p>
+                <h1>{t("Pickup requests.", "कबाड़ लेने के अनुरोध।")}</h1>
+              </div>
+            </div>
+            {request ? (
+              <div className="request-columns">
+                <RequestView
+                  request={request}
+                  busy={busy}
+                  label={label}
+                  t={t}
+                  action={action}
+                  refresh={refresh}
+                />
+                <section className="panel">
+                  <h2>{t("Review, then send.", "देखें, फिर भेजें।")}</h2>
+                  {link ? (
+                    <>
+                      <label>
+                        {t(
+                          "Collector’s WhatsApp number",
+                          "कबाड़ी का WhatsApp नंबर",
+                        )}
+                        <input
+                          inputMode="tel"
+                          placeholder="91…"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                        />
+                      </label>
+                      <small>
+                        {t(
+                          "Include country code. This number is not saved on our server.",
+                          "देश कोड जोड़ें। यह नंबर सर्वर पर नहीं सहेजा जाएगा।",
+                        )}
+                      </small>
+                      <pre className="message">{message}</pre>
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={consent}
+                          onChange={(e) => setConsent(e.target.checked)}
+                        />
+                        {t(
+                          "I reviewed the recipient and message. Sending from WhatsApp shares my number with them.",
+                          "मैंने प्राप्तकर्ता और संदेश जाँचा है। WhatsApp से भेजने पर मेरा नंबर उन्हें दिखेगा।",
+                        )}
+                      </label>
+                      {mode === "aws" && validPhone && consent ? (
+                        <a
+                          className="primary wide"
+                          href={`https://wa.me/${digits}?text=${encodeURIComponent(message)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("Open WhatsApp", "WhatsApp खोलें")} ↗
+                        </a>
+                      ) : (
+                        <button className="primary wide" disabled>
+                          {mode === "local"
+                            ? t(
+                                "WhatsApp sharing needs deployment",
+                                "WhatsApp शेयरिंग के लिए डिप्लॉय करें",
+                              )
+                            : t(
+                                "Review recipient and consent first",
+                                "पहले प्राप्तकर्ता और सहमति जाँचें",
+                              )}
+                        </button>
+                      )}
+                      <a
+                        className="secondary wide"
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t(
+                          "Open recipient test page",
+                          "प्राप्तकर्ता परीक्षण पेज खोलें",
+                        )}{" "}
+                        ↗
+                      </a>
+                      <p className="fine">
+                        {t(
+                          "Opening WhatsApp does not prove sending or delivery. Reply within 48 hours; accepting opens a seven-day collection window.",
+                          "WhatsApp खोलना भेजने या पहुँचने का प्रमाण नहीं है। 48 घंटे में जवाब दें; स्वीकार करने पर संग्रह के लिए सात दिन मिलेंगे।",
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p>
+                      {t(
+                        "The share link is shown when a request is created. Saved requests retain their status and history.",
+                        "अनुरोध बनाते समय शेयर लिंक दिखता है। सहेजे अनुरोध में स्थिति और इतिहास रहता है।",
+                      )}
+                    </p>
+                  )}
+                </section>
+              </div>
+            ) : (
+              <div className="panel empty">
+                <h2>{t("No request selected", "कोई अनुरोध नहीं चुना")}</h2>
+                <p>
+                  {t(
+                    "Prepare a basket, or open a saved request below.",
+                    "टोकरी तैयार करें या नीचे सहेजा अनुरोध खोलें।",
+                  )}
+                </p>
+              </div>
+            )}
+            {requestIds.length > 0 && (
+              <section className="saved">
+                <h3>{t("Saved on this browser", "इस ब्राउज़र पर सहेजे गए")}</h3>
+                {requestIds.map((id) => (
+                  <button
+                    className="secondary"
+                    key={id}
+                    onClick={() =>
+                      run(async () => setRequest(await api(`/requests/${id}`)))
+                    }
+                  >
+                    {id.slice(0, 8)} ↗
+                  </button>
+                ))}
+              </section>
+            )}
+          </section>
+        )}
+      </main>
+      <footer>
+        <span>
+          KabadiSetu <span>·</span>{" "}
+          {t(
+            "Made for a more thoughtful everyday.",
+            "हर दिन बेहतर छँटाई के लिए।",
+          )}
+        </span>
+        <span>
+          {t(
+            "Prototype · No verified recycling claims",
+            "प्रोटोटाइप · रीसाइक्लिंग का सत्यापित दावा नहीं",
+          )}
+        </span>
+      </footer>
+    </div>
+  );
 }
-async function api(path:string,body?:unknown,key?:string){
-  const send=()=>fetch(endpoint+'/api'+path,{method:body===undefined?'GET':'POST',credentials:endpoint?'omit':'same-origin',headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{}),...(accessToken?{Authorization:'Bearer '+accessToken}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
-  let response=await send();
-  if(response.status===401&&await renewSession())response=await send();
-  const data=await response.json(); if(!response.ok)throw new Error(data.error||'Request failed. Please try again.'); return data;
+function RequestView({
+  request,
+  recipient = false,
+  busy,
+  label,
+  t,
+  action,
+  refresh,
+}: {
+  request: RequestRecord;
+  recipient?: boolean;
+  busy: boolean;
+  label: (s: string) => string;
+  t: (a: string, b: string) => string;
+  action: (a: string) => void;
+  refresh: () => void;
+}) {
+  return (
+    <section className="panel request-card">
+      <div className="section-heading">
+        <span className={"status " + request.status}>
+          {label(request.status)}
+        </span>
+        <button className="text-button" onClick={refresh} disabled={busy}>
+          {t("Refresh", "रीफ़्रेश")} ↻
+        </button>
+      </div>
+      <h2>{t("The pickup basket", "कबाड़ की टोकरी")}</h2>
+      {request.items.map((i) => (
+        <div className="basket-row" key={i.id}>
+          <strong>{t(i.en, i.hi)}</strong>
+          <span>× {i.quantity}</span>
+        </div>
+      ))}
+      <p className="fine">
+        {t(
+          "Estimated counts. Acceptance and rates need confirmation.",
+          "अनुमानित गिनती। स्वीकृति और दर की पुष्टि ज़रूरी है।",
+        )}
+      </p>
+      <div className="action-buttons">
+        {recipient && request.status === "awaiting_response" && (
+          <>
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => action("accept")}
+            >
+              {t("Accept request", "स्वीकार करें")}
+            </button>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => action("reject")}
+            >
+              {t("Decline", "मना करें")}
+            </button>
+          </>
+        )}
+        {request.status === "accepted" && (
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() => action("collect")}
+          >
+            {t("Report collected", "संग्रह की सूचना दें")}
+          </button>
+        )}
+        {!recipient &&
+          ["awaiting_response", "accepted"].includes(request.status) && (
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => action("cancel")}
+            >
+              {t("Cancel request", "अनुरोध रद्द करें")}
+            </button>
+          )}
+      </div>
+      <h3>{t("Activity", "गतिविधि")}</h3>
+      <ol className="timeline">
+        {request.events.map((event, i) => (
+          <li key={i}>
+            <strong>
+              {
+                (
+                  {
+                    created: t("Request created", "अनुरोध बना"),
+                    accept: t("Accepted", "स्वीकार किया"),
+                    reject: t("Declined", "मना किया"),
+                    collect: t("Collection reported", "संग्रह की सूचना"),
+                    cancel: t("Cancelled", "रद्द किया"),
+                  } as Record<string, string>
+                )[event.action]
+              }
+            </strong>
+            <small>
+              {event.source === "pickup_link"
+                ? t("Through pickup link", "पिकअप लिंक से")
+                : t("By household", "घर के सदस्य द्वारा")}{" "}
+              · {new Date(event.at * 1000).toLocaleString()}
+            </small>
+          </li>
+        ))}
+      </ol>
+      <p className="fine">
+        {t(
+          "Link possession is not identity verification. Collection reports are not proof of recycling.",
+          "लिंक होना पहचान का सत्यापन नहीं है। संग्रह की सूचना रीसाइक्लिंग का प्रमाण नहीं है।",
+        )}
+      </p>
+    </section>
+  );
 }
-function Icon({kind='leaf'}:{kind?:string}){return <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{kind==='paper'?<><path d="M8 5h13l4 4v18H8zM21 5v5h4M12 14h9M12 18h9M12 22h6"/></>:kind==='box'?<><path d="m4 11 12-6 12 6v15H4zM4 11l12 6 12-6M16 17v9M10 8l12 6"/></>:kind==='bottle'?<><path d="M13 4h6v7l4 5v11H9V16l4-5zM13 8h6M9 19h14"/></>:kind==='can'?<><ellipse cx="16" cy="7" rx="8" ry="3"/><path d="M8 7v18c0 4 16 4 16 0V7M12 12v11M20 12v11"/></>:kind==='care'?<><path d="m16 4 13 23H3zM16 12v7M16 23h.01"/></>:<><path d="M26 5C8 3 4 11 8 21c10 4 18-2 18-16ZM6 27 22 10M12 20v-7M17 15h6"/></>}</g></svg>}
-const names:Record<string,[string,string]>={awaiting_response:['Awaiting response','जवाब की प्रतीक्षा'],accepted:['Accepted','स्वीकार किया'],rejected:['Declined','मना किया'],cancelled:['Cancelled','रद्द किया'],expired:['Expired','समय समाप्त'],collection_reported:['Collection reported','संग्रह की सूचना'],wet:['Wet waste','गीला कचरा'],dry:['Dry waste','सूखा कचरा'],sanitary:['Sanitary waste','सैनिटरी कचरा'],special_care:['Special care','विशेष देखभाल'],e_waste:['E-waste','ई-कचरा'],unresolved:['Needs a closer look','और जाँच ज़रूरी']};
-function App(){
-  const [lang,setLang]=useState<'en'|'hi'>('en');const t=(en:string,hi:string)=>lang==='en'?en:hi;
-  const [items,setItems]=useState<Item[]>([]),[basket,setBasket]=useState<Row[]>([]),[search,setSearch]=useState(''),[group,setGroup]=useState('All');
-  const [chosen,setChosen]=useState<Item|null>(null),[condition,setCondition]=useState(''),[route,setRoute]=useState<Route|null>(null);
-  const [tab,setTab]=useState('sort'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
-  const [request,setRequest]=useState<RequestRecord|null>(null),[phone,setPhone]=useState(''),[consent,setConsent]=useState(false);
-  const [mode,setMode]=useState('loading'),[signedIn,setSignedIn]=useState(!endpoint),[authMode,setAuthMode]=useState('login');
-  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[code,setCode]=useState('');
-  const [requestIds,setRequestIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('ks-requests')||'[]')}catch{return []}});
-  const createKey=useRef(crypto.randomUUID());
-  const linkState=useRef(new URLSearchParams(location.hash.slice(1)));
-  const recipient=location.pathname==='/r';
-  useEffect(()=>{document.documentElement.lang=lang},[lang]);
-  useEffect(()=>{api('/health').then(x=>setMode(x.mode)).catch(()=>setMode('unavailable'));api('/catalogue').then(x=>setItems(x.items)).catch(e=>setError(e.message))},[]);
-  useEffect(()=>{if(signedIn&&!recipient)api('/basket').then(x=>setBasket(x.items)).catch(e=>setError(e.message))},[signedIn]);
-  useEffect(()=>{if(recipient)run(async()=>setRequest(await api('/pickup/view',{id:linkState.current.get('id'),token:linkState.current.get('t')})))},[]);
-  async function run(fn:()=>Promise<void>){setBusy(true);setError('');setNotice('');try{await fn()}catch(e){setError(e instanceof Error?e.message:'Please try again.')}finally{setBusy(false)}}
-  async function auth(){await run(async()=>{
-    const region=env.VITE_AWS_REGION,client=env.VITE_COGNITO_CLIENT_ID;
-    if(!region||!client)throw new Error('Cloud sign-in is not configured yet.');
-    const action=authMode==='signup'?'SignUp':authMode==='verify'?'ConfirmSignUp':'InitiateAuth';
-    const payload=authMode==='signup'?{ClientId:client,Username:email,Password:password,UserAttributes:[{Name:'email',Value:email}]}:authMode==='verify'?{ClientId:client,Username:email,ConfirmationCode:code}:{ClientId:client,AuthFlow:'USER_PASSWORD_AUTH',AuthParameters:{USERNAME:email,PASSWORD:password}};
-    const response=await cognito(action,payload);
-    const result=await response.json();if(!response.ok)throw new Error(result.message||'Sign-in failed.');
-    if(authMode==='signup'){setAuthMode('verify');setNotice('Check your email for the verification code.')}else if(authMode==='verify'){setAuthMode('login');setNotice('Email verified. You can sign in.')}else{if(!result.AuthenticationResult?.AccessToken)throw new Error('This account needs an additional sign-in step.');accessToken=result.AuthenticationResult.AccessToken;refreshToken=result.AuthenticationResult.RefreshToken||'';setSignedIn(true);setPassword('')}
-  })}
-  function select(item:Item){setChosen(item);setCondition('');setRoute(null);setError('')}
-  async function decide(value:string){setCondition(value);if(chosen)await run(async()=>setRoute(await api('/decide',{id:chosen.id,answers:{clean:value}})))}
-  async function updateBasket(next:Row[]){await run(async()=>{const saved=await api('/basket',{items:next});setBasket(saved.items);createKey.current=crypto.randomUUID()})}
-  async function add(){if(!chosen||!route?.eligible)return;const existing=basket.find(i=>i.id===chosen.id);if(existing){setNotice(t('Already in your basket. Adjust the count there.','पहले से टोकरी में है। वहीं मात्रा बदलें।'));return}await updateBasket([...basket,{id:chosen.id,en:chosen.en,hi:chosen.hi,quantity:1,answers:{clean:condition}}]);setChosen(null);setNotice(t('Added to your basket.','टोकरी में जोड़ दिया।'))}
-  async function create(){await run(async()=>{const result=await api('/requests',{items:basket,language:lang},createKey.current);setRequest(result);setTab('request');const ids=[result.id,...requestIds.filter(id=>id!==result.id)];setRequestIds(ids);localStorage.setItem('ks-requests',JSON.stringify(ids));setConsent(false)})}
-  async function action(action:string){if(!request)return;await run(async()=>{const key=crypto.randomUUID();setRequest(await api(recipient?'/pickup/action':`/requests/${request.id}/actions`,{id:request.id,token:recipient?linkState.current.get('t'):undefined,action,version:request.version},key))})}
-  async function refresh(){if(!request)return;await run(async()=>setRequest(recipient?await api('/pickup/view',{id:request.id,token:linkState.current.get('t')}):await api(`/requests/${request.id}`)))}
-  const link=request?.token?`${location.origin}/r#id=${request.id}&t=${request.token}`:'';
-  const message=request?[t('Hello! I have these clean, dry scrap items in Jaipur:','नमस्ते! जयपुर में मेरे पास यह साफ़ और सूखा कबाड़ है:'),...request.items.map(i=>`• ${lang==='en'?i.en:i.hi} × ${i.quantity}`),t('Counts are estimates. Do you take these items? Please confirm rates and a suitable time. We can arrange the address in this chat.','मात्रा अनुमानित है। क्या आप ये चीज़ें लेते हैं? कृपया दर और समय बताएँ। पता इसी चैट में तय करेंगे।'),link?t('View and respond: ','अनुरोध देखें: ')+link:''].filter(Boolean).join('\n'):'';
-  const digits=phone.replace(/[\s()+-]/g,'');const validPhone=/^[1-9]\d{7,14}$/.test(digits);
-  const visible=items.filter(i=>(group==='All'||i.group===group)&&`${i.en} ${i.hi}`.toLowerCase().includes(search.toLowerCase()));
-  const label=(value:string)=>names[value]?.[lang==='en'?0:1]||value;
-  return <div className="app"><header><a className="brand" href="/"><span className="brand-icon"><Icon/></span>Kabadi<span>Setu</span><small>कबाड़ी सेतु</small></a><div className="header-right"><span className="locality">● {t('Jaipur · prototype','जयपुर · प्रोटोटाइप')}</span><button className="language" onClick={()=>setLang(lang==='en'?'hi':'en')}>{lang==='en'?'हिन्दी':'English'} <span>↔</span></button></div></header>
-    <div className="environment">{mode==='local'?t('LOCAL TEST · No AWS calls. Pickup links work only on this computer.','स्थानीय परीक्षण · AWS कॉल नहीं। लिंक केवल इसी कंप्यूटर पर काम करते हैं।'):mode==='aws'?t('PROTOTYPE · Collector acceptance and physical collection are unverified.','प्रोटोटाइप · कबाड़ी की स्वीकृति और वास्तविक संग्रह की पुष्टि नहीं हुई है।'):t('Connecting to the application…','ऐप से जुड़ रहे हैं…')}</div>
-    {!recipient&&<nav aria-label="Main navigation">{[['sort','01',t('Sort an item','सामान छाँटें')],['basket','02',t('Your basket','आपकी टोकरी')],['request','03',t('Pickup requests','अनुरोध')]].map(([id,n,title])=><button className={tab===id?'active':''} key={id} onClick={()=>setTab(id)}><span>{n}</span>{title}{id==='basket'&&<b>{basket.length}</b>}</button>)}</nav>}
-    <main><div role="alert" className={error?'alert error':'hidden'}>{error}</div><div role="status" className={notice?'alert':'hidden'}>{notice}</div>
-    {!signedIn&&!recipient?<section className="panel login"><p className="eyebrow">YOUR HOUSEHOLD, YOUR BASKET</p><h1>{authMode==='signup'?'Create your account':authMode==='verify'?'Verify your email':'Welcome back.'}</h1><form onSubmit={e=>{e.preventDefault();auth()}}><label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>{authMode==='verify'?<label>Verification code<input required value={code} onChange={e=>setCode(e.target.value)}/></label>:<label>Password<input type="password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)}/></label>}<button className="primary" disabled={busy}>Continue →</button></form><button className="text-button" onClick={()=>setAuthMode(authMode==='login'?'signup':'login')}>{authMode==='login'?'New here? Create an account':'Back to sign in'}</button></section>:
-    recipient?<section className="request-layout"><div><p className="eyebrow">{t('PICKUP REQUEST','कबाड़ लेने का अनुरोध')}</p><h1>{t('A little scrap.\nA useful next stop.','थोड़ा कबाड़।\nएक उपयोगी अगला कदम।')}</h1><p className="intro">{t('Review the items below. Arrange rates, location and timing directly in your WhatsApp conversation.','सामान देखें। दर, पता और समय अपनी WhatsApp चैट में तय करें।')}</p></div>{request&&<RequestView request={request} recipient busy={busy} label={label} t={t} action={action} refresh={refresh}/>}</section>:
-    tab==='sort'?<><section className="hero"><div><p className="eyebrow">{t('SMALL HABITS. LESS MIXED WASTE.','छोटी आदतें। कम मिला-जुला कचरा।')}</p><h1>{t('Give your scrap\na better next stop.','अपने कबाड़ को\nसही जगह पहुँचाएँ।')}</h1><p className="intro">{t('Know what goes where. Keep the useful things together. Ask your kabadiwala when they can collect.','जानें क्या कहाँ जाएगा। उपयोगी सामान अलग रखें। अपने कबाड़ी से लेने का समय पूछें।')}</p><div className="hero-notes"><span>✓ {t('Simple sorting','आसान छँटाई')}</span><span>✓ {t('Your own WhatsApp','आपका WhatsApp')}</span></div></div><div className="illustration" aria-hidden="true"><span className="orbit">↗</span><div className="scrap paper"><Icon kind="paper"/></div><div className="scrap bottle"><Icon kind="bottle"/></div><div className="scrap box"><Icon kind="box"/></div><div className="basket-art"><span>कबाड़ी सेतु</span><strong>GOOD THINGS<br/>GO AROUND.</strong></div><span className="art-note">sort today. save for later.</span></div></section>
-      <section className="workspace"><div className="catalogue panel"><div className="section-heading"><div><p className="eyebrow">{t('START WITH ONE ITEM','एक सामान से शुरू करें')}</p><h2>{t('What are you sorting?','आप क्या छाँट रहे हैं?')}</h2></div><span className="count">{items.length} {t('items','वस्तुएँ')}</span></div><label className="search"><span>⌕</span><input aria-label={t('Search items','सामान खोजें')} placeholder={t('Try newspaper, bottle, battery…','अख़बार, बोतल, बैटरी खोजें…')} value={search} onChange={e=>setSearch(e.target.value)}/></label><div className="filters">{['All','Paper','Plastic','Metal','Glass','Other'].map((g,i)=><button key={g} className={group===g?'selected':''} onClick={()=>setGroup(g)}>{t(g,['सभी','कागज़','प्लास्टिक','धातु','काँच','अन्य'][i])}</button>)}</div><div className="item-grid">{visible.map(item=><button key={item.id} onClick={()=>select(item)} className={'item-card '+(chosen?.id===item.id?'chosen':'')}><span className={'item-icon '+item.group.toLowerCase()}><Icon kind={item.icon}/></span><strong>{lang==='en'?item.en:item.hi}</strong><span className="item-arrow">↗</span></button>)}</div>{!visible.length&&<p>{t('No matching item. Choose “Something else / unsure”.','सामान नहीं मिला। “कुछ और / पता नहीं” चुनें।')}</p>}</div>
-      <aside>{chosen?<section className="panel review"><p className="eyebrow">{t('CHECK BEFORE YOU ADD','जोड़ने से पहले जाँचें')}</p><h2>{lang==='en'?chosen.en:chosen.hi}</h2>{chosen.check_clean?<><p>{t('Is it empty, clean and dry? Only select yes if it did not contain hazardous material.','क्या यह खाली, साफ़ और सूखा है? खतरनाक सामग्री थी तो हाँ न चुनें।')}</p><div className="answers">{[['yes','Yes','हाँ'],['no','No','नहीं'],['unsure','Unsure','पता नहीं']].map(([v,en,hi])=><button disabled={busy} className={condition===v?'selected':''} onClick={()=>decide(v)} key={v}>{t(en,hi)}</button>)}</div></>:<button className="secondary" disabled={busy} onClick={()=>decide('unsure')}>{t('Show guidance','निर्देश देखें')}</button>}{route&&<div className={'guidance '+(route.eligible?'positive':'')}><span className="eyebrow">{label(route.stream)}</span><p>{lang==='en'?route.reason:route.reason_hi}</p>{route.eligible&&<button className="primary" disabled={busy} onClick={add}>{t('Add to basket','टोकरी में जोड़ें')} +</button>}</div>}<button className="text-button" onClick={()=>setChosen(null)}>{t('Choose a different item','दूसरा सामान चुनें')}</button></section>:<section className="panel how"><div className="round-leaf"><Icon/></div><h2>{t('A basket,\nnot a mixed bin.','एक टोकरी,\nमिला-जुला कचरा नहीं।')}</h2><p>{t('Choose an item to see where it belongs. Only suitable, confirmed items can join your pickup basket.','सामान चुनकर उसका सही तरीका जानें। केवल उपयुक्त और जाँचा हुआ सामान टोकरी में जोड़ें।')}</p><ol><li>{t('Identify and check','पहचानें और जाँचें')}</li><li>{t('Keep it separate','अलग रखें')}</li><li>{t('Ask before pickup','लेने से पहले पूछें')}</li></ol></section>}<section className="photo-note"><span>◎</span><div><strong>{t('Photo recognition is next','फोटो पहचान अगला चरण है')}</strong><p>{t('This working baseline uses manual selection. No model calls or AI charges.','इस शुरुआती संस्करण में मैनुअल चयन है। कोई AI कॉल या शुल्क नहीं।')}</p></div></section></aside></section></>:
-    tab==='basket'?<section className="basket-layout"><div><p className="eyebrow">{t('SET ASIDE, READY TO ASK','अलग रखा, पूछने के लिए तैयार')}</p><h1>{t('Your little\ncollection.','आपका छोटा\nसंग्रह।')}</h1><p className="intro">{t('Counts are estimates, not weights. Your collector confirms acceptance, rates and the final amount.','ये अनुमानित गिनती हैं, वजन नहीं। कबाड़ी स्वीकृति, दर और अंतिम राशि बताएँगे।')}</p><button className="text-button" onClick={()=>setTab('sort')}>← {t('Add more items','और सामान जोड़ें')}</button></div><section className="panel">{!basket.length?<div className="empty"><Icon kind="box"/><h2>{t('Start with one item.','एक सामान से शुरू करें।')}</h2><p>{t('Your basket is empty.','आपकी टोकरी खाली है।')}</p><button className="primary" onClick={()=>setTab('sort')}>{t('Find an item','सामान खोजें')} →</button></div>:<><h2>{t('Saved for pickup','उठवाने के लिए रखा')}</h2>{basket.map(row=><div className="basket-row" key={row.id}><div><strong>{lang==='en'?row.en:row.hi}</strong><small>{t('Clean & dry · estimated count','साफ़ और सूखा · अनुमानित गिनती')}</small></div><input aria-label={`${row.en} count`} type="number" min={1} max={99} value={row.quantity} disabled={busy} onChange={e=>{const q=Number(e.target.value);if(q>=1&&q<=99)updateBasket(basket.map(i=>i.id===row.id?{...i,quantity:q}:i))}}/><button aria-label={'Remove '+row.en} className="remove" disabled={busy} onClick={()=>updateBasket(basket.filter(i=>i.id!==row.id))}>×</button></div>)}<div className="quote-note">{t('Rates and minimums are unknown. We’ll prepare a quote request, not promise a sale.','दर और न्यूनतम मात्रा अज्ञात हैं। हम दर पूछने का अनुरोध बनाएँगे, बिक्री का वादा नहीं।')}</div><button className="primary wide" onClick={create} disabled={busy}>{busy?t('Saving…','सहेज रहे हैं…'):t('Prepare pickup request','अनुरोध तैयार करें')} →</button></>}</section></section>:
-    <section><div className="section-heading"><div><p className="eyebrow">{t('KEEP THE LOOP VISIBLE','अनुरोध की स्थिति जानें')}</p><h1>{t('Pickup requests.','कबाड़ लेने के अनुरोध।')}</h1></div></div>{request?<div className="request-columns"><RequestView request={request} busy={busy} label={label} t={t} action={action} refresh={refresh}/><section className="panel"><h2>{t('Review, then send.','देखें, फिर भेजें।')}</h2>{link?<><label>{t('Collector’s WhatsApp number','कबाड़ी का WhatsApp नंबर')}<input inputMode="tel" placeholder="91…" value={phone} onChange={e=>setPhone(e.target.value)}/></label><small>{t('Include country code. This number is not saved on our server.','देश कोड जोड़ें। यह नंबर सर्वर पर नहीं सहेजा जाएगा।')}</small><pre className="message">{message}</pre><label className="checkbox"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/>{t('I reviewed the recipient and message. Sending from WhatsApp shares my number with them.','मैंने प्राप्तकर्ता और संदेश जाँचा है। WhatsApp से भेजने पर मेरा नंबर उन्हें दिखेगा।')}</label>{mode==='aws'&&validPhone&&consent?<a className="primary wide" href={`https://wa.me/${digits}?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer">{t('Open WhatsApp','WhatsApp खोलें')} ↗</a>:<button className="primary wide" disabled>{mode==='local'?t('WhatsApp sharing needs deployment','WhatsApp शेयरिंग के लिए डिप्लॉय करें'):t('Review recipient and consent first','पहले प्राप्तकर्ता और सहमति जाँचें')}</button>}<a className="secondary wide" href={link} target="_blank" rel="noopener noreferrer">{t('Open recipient test page','प्राप्तकर्ता परीक्षण पेज खोलें')} ↗</a><p className="fine">{t('Opening WhatsApp does not prove sending or delivery. This link expires after 48 hours.','WhatsApp खोलना भेजने या पहुँचने का प्रमाण नहीं है। लिंक 48 घंटे बाद समाप्त होगा।')}</p></>:<p>{t('The share link is shown when a request is created. Saved requests retain their status and history.','अनुरोध बनाते समय शेयर लिंक दिखता है। सहेजे अनुरोध में स्थिति और इतिहास रहता है।')}</p>}</section></div>:<div className="panel empty"><h2>{t('No request selected','कोई अनुरोध नहीं चुना')}</h2><p>{t('Prepare a basket, or open a saved request below.','टोकरी तैयार करें या नीचे सहेजा अनुरोध खोलें।')}</p></div>}{requestIds.length>0&&<section className="saved"><h3>{t('Saved on this browser','इस ब्राउज़र पर सहेजे गए')}</h3>{requestIds.map(id=><button className="secondary" key={id} onClick={()=>run(async()=>setRequest(await api(`/requests/${id}`)))}>{id.slice(0,8)} ↗</button>)}</section>}</section>}
-    </main><footer><span>KabadiSetu <span>·</span> {t('Made for a more thoughtful everyday.','हर दिन बेहतर छँटाई के लिए।')}</span><span>{t('Prototype · No verified recycling claims','प्रोटोटाइप · रीसाइक्लिंग का सत्यापित दावा नहीं')}</span></footer></div>
-}
-function RequestView({request,recipient=false,busy,label,t,action,refresh}:{request:RequestRecord;recipient?:boolean;busy:boolean;label:(s:string)=>string;t:(a:string,b:string)=>string;action:(a:string)=>void;refresh:()=>void}){return <section className="panel request-card"><div className="section-heading"><span className={'status '+request.status}>{label(request.status)}</span><button className="text-button" onClick={refresh} disabled={busy}>{t('Refresh','रीफ़्रेश')} ↻</button></div><h2>{t('The pickup basket','कबाड़ की टोकरी')}</h2>{request.items.map(i=><div className="basket-row" key={i.id}><strong>{t(i.en,i.hi)}</strong><span>× {i.quantity}</span></div>)}<p className="fine">{t('Estimated counts. Acceptance and rates need confirmation.','अनुमानित गिनती। स्वीकृति और दर की पुष्टि ज़रूरी है।')}</p><div className="action-buttons">{recipient&&request.status==='awaiting_response'&&<><button className="primary" disabled={busy} onClick={()=>action('accept')}>{t('Accept request','स्वीकार करें')}</button><button className="secondary" disabled={busy} onClick={()=>action('reject')}>{t('Decline','मना करें')}</button></>}{request.status==='accepted'&&<button className="primary" disabled={busy} onClick={()=>action('collect')}>{t('Report collected','संग्रह की सूचना दें')}</button>}{!recipient&&['awaiting_response','accepted'].includes(request.status)&&<button className="secondary" disabled={busy} onClick={()=>action('cancel')}>{t('Cancel request','अनुरोध रद्द करें')}</button>}</div><h3>{t('Activity','गतिविधि')}</h3><ol className="timeline">{request.events.map((event,i)=><li key={i}><strong>{({created:t('Request created','अनुरोध बना'),accept:t('Accepted','स्वीकार किया'),reject:t('Declined','मना किया'),collect:t('Collection reported','संग्रह की सूचना'),cancel:t('Cancelled','रद्द किया')} as Record<string,string>)[event.action]}</strong><small>{event.source==='pickup_link'?t('Through pickup link','पिकअप लिंक से'):t('By household','घर के सदस्य द्वारा')} · {new Date(event.at*1000).toLocaleString()}</small></li>)}</ol><p className="fine">{t('Link possession is not identity verification. Collection reports are not proof of recycling.','लिंक होना पहचान का सत्यापन नहीं है। संग्रह की सूचना रीसाइक्लिंग का प्रमाण नहीं है।')}</p></section>}
-createRoot(document.getElementById('root')!).render(<App/>);
+createRoot(document.getElementById("root")!).render(<App />);
