@@ -1,5 +1,7 @@
 # KabadiSetu
 
+**The AI names the item. Code decides where it goes. People decide what happens.**
+
 A Jaipur prototype for sorting household items, keeping a scrap basket and asking a collector for a pickup through the household's own WhatsApp.
 
 ## What works today
@@ -8,7 +10,7 @@ Manual catalogue selection, deterministic sorting guidance, baskets, pickup requ
 
 No collector has validated rates or minimum quantities, so the app prepares a quote request. Sending a WhatsApp link does not prove delivery. A link response is not identity verification or proof of physical collection/recycling.
 
-The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. Public frontend hosting and photo recognition are still pending. The photo-validation helper is tested but not yet connected to an upload route. No model savings or real-world impact has been measured.
+The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. Amplify hosting is being verified. Recognition is implemented behind a disabled flag because Bedrock reports this account is not authorized. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; they reject requests while recognition is disabled. No model savings or real-world impact has been measured.
 
 ## Run locally
 
@@ -59,3 +61,22 @@ See [cost controls](docs/cost.md) and [retry decisions](docs/decisions/002-retri
 Developed by Anish Kumawat with Codex for implementation and Claude for research/review and implementation fixes. AI assistance must also be disclosed in the submission writeup. Dependencies retain their upstream licenses. There is no claim that generated code is guaranteed unique or plagiarism-free; changes are reviewed and should be explainable by the author.
 
 The earliest recorded project files were created on October 8, 2026 around 11:40 IST. The exact official kickoff hour still needs confirmation against the organizers' announcement. Local commit timestamps alone do not resolve eligibility; preserve the original timeline and ask organizers if the times overlap.
+
+
+## Try it as a judge
+
+Use the shared demo credentials supplied privately by the author; they are never committed. The author’s copy is `.local/demo-household.json`. Hosting URL: https://main.d364mryjpwg6jn.amplifyapp.com (check the verification log for deployment status).
+
+1. Open a fresh browser session and sign in with the demo household. Choose Hindi or English.
+2. Select Newspaper manually, confirm it is clean and dry, and add it to the basket. Photo recognition may be unavailable; that is disclosed rather than simulated.
+3. Prepare a pickup request and review its message. Open the recipient test page without sending a WhatsApp message to a real person.
+4. On the Hindi collector page, accept the request, then report it collected. Return to the household page and refresh to see its history. This is a test report, not verified collection.
+5. Return to sorting: Newspaper appears under Your usual items. Select it without an AI call and answer the condition question again. Optionally save a collector number on this browser only, after reviewing the number yourself.
+
+## Recognition limits and evaluation
+
+Recognition is disabled by default and has no Bedrock permission while disabled. Once authorized, one direct Nova Lite call suggests a catalogue ID. Invalid output becomes unknown; no model tools can change a basket or pickup. The daily UTC limits are five inference reservations per household and fifty for the whole app. Upload grants are also limited. Errors do not automatically refund a possibly billed call. A new scan of the same photo is not yet deduplicated by hash across scans.
+
+See `eval/README.md` for the 30–50-photo plan. No real held-out dataset or measured recognition savings exists yet. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
+
+GitHub Actions checks local DynamoDB integration, IAM policies, Python tests, frontend tests and the frontend build. Its workflow is committed locally but has not run on GitHub while pushes are paused.

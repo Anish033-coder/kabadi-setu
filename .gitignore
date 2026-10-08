@@ -13,3 +13,5 @@ __pycache__/
 .aws-sam/
 .build/
 .tools-venv/
+eval/photos/
+eval/manifest.csv

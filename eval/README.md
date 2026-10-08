@@ -1,0 +1,17 @@
+# Recognition evaluation
+
+No evaluation results exist yet. Both account-access probes failed, and no real photo set has been supplied. A synthetic green square is an access test, not an accuracy example.
+
+Collect 30–50 original item photos with no people, addresses or documents. Label each with an existing catalogue ID or unknown before running the model. Save photos under `eval/photos/` (ignored by Git). Create `eval/manifest.csv` with columns `path,label,split`, where path is relative to this directory and split is dev or heldout. Keep every image of the same physical item in the same split; the validator also rejects identical bytes appearing twice. Use development examples to choose photo size, then freeze the configuration before the held-out run.
+
+The evaluator uses the same prompt and model as the application, strips metadata, and saves raw per-image results and token usage. It makes one call per selected image/size, never automatically retries. It requires explicit paid-call opt-in and non-root credentials. Failures remain in the denominator; token totals for failed responses may be unknown. Do not claim measured cost until access works and region-specific prices have been recorded.
+
+Examples after account access is resolved:
+
+```sh
+AWS_PROFILE=kabadi-setu .venv/bin/python eval/run.py --split dev --sizes 768 1024 --allow-paid-calls
+# Freeze the chosen size in a decision note before evaluating held-out images.
+AWS_PROFILE=kabadi-setu .venv/bin/python eval/run.py --split heldout --sizes 1024 --allow-paid-calls
+```
+
+Report correct/total and unresolved/total for each size, plus input/output tokens and latency. For each result, inference cost estimate = input_tokens × dated input price per million / 1,000,000 + output_tokens × dated output price per million / 1,000,000. Whole-flow cost also includes API, storage, compute and logs. Label estimates before credits; do not treat missing token usage as zero.

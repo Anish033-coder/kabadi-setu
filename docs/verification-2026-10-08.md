@@ -26,3 +26,10 @@ Live smoke checks passed: Cognito sign-in with two temporary users, rejection wi
 Live configuration verified: Python 3.14 arm64 Lambda active; HTTP route target two requests/second, burst five; detailed API metrics disabled; application log retention fourteen days. No Bedrock calls or GitHub pushes. Infrastructure is now active and can incur service charges; spend has not yet been reconciled with billing.
 
 Public frontend hosting, physical-phone browser testing and image recognition remain pending.
+
+
+## Bedrock availability probes — recorded 2026-10-08T21:57:54+05:30
+
+- Mumbai `ap-south-1`, `apac.amazon.nova-lite-v1:0`: ValidationException, “Operation not allowed”.
+- US fallback `us-east-1`, `amazon.nova-lite-v1:0`: same error.
+- Both probes used a generated 64×64 solid-colour JPEG, max output 20 tokens; neither returned token usage or recognition output. Charges cannot be inferred from that absence. No accuracy conclusion is possible. No account upgrade or capacity purchase was made.

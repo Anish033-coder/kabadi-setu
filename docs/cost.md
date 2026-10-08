@@ -2,12 +2,12 @@
 
 Status: manual backend deployed in Mumbai on October 8, 2026; no measured cloud cost or inference savings yet.
 
-The manual path makes zero model calls. Recognition is not connected. Do not turn this into a claim that the deployed app is free: API requests, Lambda, DynamoDB, logging, hosting and authentication can contribute costs.
+The manual path makes zero model calls. Recognition is implemented but disabled because account authorization failed. Do not turn this into a claim that the deployed app is free: API requests, Lambda, DynamoDB, logging, hosting and authentication can contribute costs.
 
 ## Controls active after the first deploy
 
-- HTTP API default route limit: 2 requests/second, burst 5. This is a per-route target, not a whole-account hard cap.
-- Lambda timeout: 10 seconds, memory: 512 MB. Live preflight found the Mumbai account concurrency quota is 10; keep it unchanged. No per-function reservation: AWS requires an unreserved pool that this small account quota cannot support. Traffic throttles remain in place.
+- HTTP API default route limit: 5 requests/second, burst 10. This is a per-route target, not a whole-account hard cap.
+- Lambda timeout: 28 seconds, memory: 512 MB. Live preflight found the Mumbai account concurrency quota is 10; keep it unchanged. No per-function reservation: AWS requires an unreserved pool that this small account quota cannot support. Traffic throttles remain in place.
 - No provisioned concurrency, NAT gateway, dedicated server or scheduled inference.
 - DynamoDB on-demand, with TTL for request records and action receipts after 90 days. Basket records currently persist; account deletion/cleanup is still future work.
 - Application log retention: 14 days. No request bodies, secrets or photos logged; no unique request IDs as metric dimensions.
@@ -15,7 +15,7 @@ The manual path makes zero model calls. Recognition is not connected. Do not tur
 - The alert address is stored in ignored `.local/deploy-settings.json` and in the deployed budget configuration, not tracked source files.
 - Model probe requires `--allow-paid-call` and refuses root credentials. It tests the caller, not the Lambda execution role.
 
-**Budget thresholds, API route throttles and log retention have been verified live. Budgets are delayed notifications, not a spending cap.** Traffic throttles reduce exposure but do not guarantee a maximum bill. The manual skeleton has no permission to invoke Bedrock.
+**Budget thresholds, API route throttles and log retention have been verified live. Budgets are delayed notifications, not a spending cap.** Traffic throttles reduce exposure but do not guarantee a maximum bill. The disabled recognition configuration has no permission to invoke Bedrock.
 
 ## Measurement plan
 
@@ -29,3 +29,10 @@ Sources checked 2026-10-08:
 - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-httpapi.html
 - https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-budgets-budget.html
 - https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-budgets-budget-costtypes.html
+
+
+## Recognition implementation (awaiting account access)
+
+Five household and fifty application inference reservations per UTC day; twenty household and two hundred application upload grants per day. Private JPEGs expire under S3 lifecycle after one day (deletion is asynchronous). No SDK inference retries. Token usage is recorded by each recognition call; request summaries no longer incorrectly report zero calls for every route.
+
+As of October 8, both availability probes failed and returned no usage. Model accuracy, tokens per real photo and inference dollar estimates are **not measured**. Infrastructure charges and failed-call billing are also not yet reconciled. Do not substitute projected figures for measured ones.
