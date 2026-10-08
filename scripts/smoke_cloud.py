@@ -54,7 +54,7 @@ def main():
         return owner, auth['AuthenticationResult']['AccessToken']
 
     try:
-        assert call('/health')['recognition'] == 'not-connected'
+        assert call('/health')['recognition'] in ('unavailable','enabled')
         call('/basket', expected=401)
         owner, token = household()
         _, other_token = household()

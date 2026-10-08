@@ -7,10 +7,17 @@ Parameters:
     Type: String
     Default: /kabadi-setu/link-secret
     Description: SSM SecureString holding the pickup-link HMAC secret. Create it before the first deploy (make secret).
+  RecognitionEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
   AllowedOrigins:
     Type: CommaDelimitedList
     Default: 'http://localhost:5173'
     Description: Browser origins allowed to call the API. Set this to the exact HTTPS frontend origin before a public deployment.
+
+Conditions:
+  CanRecognize: !Equals [!Ref RecognitionEnabled, 'true']
 
 Resources:
   UserPool:
@@ -91,8 +98,8 @@ Resources:
               audience:
                 - !Ref UserPoolClient
       DefaultRouteSettings:
-        ThrottlingRateLimit: 2
-        ThrottlingBurstLimit: 5
+        ThrottlingRateLimit: 5
+        ThrottlingBurstLimit: 10
       CorsConfiguration:
         AllowOrigins: !Ref AllowedOrigins
         AllowHeaders: [authorization, content-type, idempotency-key]
@@ -100,6 +107,74 @@ Resources:
         MaxAge: 600
       Tags:
         project: kabadi-setu
+
+  PhotoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ObjectOwnership: BucketOwnerEnforced}]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      LifecycleConfiguration:
+        Rules:
+          - Id: RemoveOldPhotos
+            Status: Enabled
+            ExpirationInDays: 1
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: !Ref AllowedOrigins
+            AllowedMethods: [POST]
+            AllowedHeaders: [content-type]
+            MaxAge: 300
+      Tags: [{Key: project, Value: kabadi-setu}]
+
+  ApiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ProjectDataAndLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem]
+                Resource: !GetAtt Table.Arn
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !GetAtt ApiLogGroup.Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LinkSecretParameterName}
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject]
+                Resource: !Sub ${PhotoBucket.Arn}/photos/*
+              - !If
+                - CanRecognize
+                - Effect: Allow
+                  Action: bedrock:InvokeModel
+                  Resource:
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-south-1:${AWS::AccountId}:inference-profile/apac.amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-south-1::foundation-model/amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-1::foundation-model/amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-2::foundation-model/amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-1::foundation-model/amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-2::foundation-model/amazon.nova-lite-v1:0
+                    - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-3::foundation-model/amazon.nova-lite-v1:0
+                - !Ref AWS::NoValue
+      Tags: [{Key: project, Value: kabadi-setu}]
 
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -110,27 +185,31 @@ Resources:
       Runtime: python3.14
       Architectures: [arm64]
       MemorySize: 512
-      Timeout: 10
+      Timeout: 28
       # This account has a total concurrency quota of 10. AWS cannot reserve 2
       # while retaining its required unreserved pool; retain the small account quota.
       LoggingConfig:
         LogGroup: !Ref ApiLogGroup
       Environment:
         Variables:
+          RECOGNITION_ENABLED: !Ref RecognitionEnabled
+          PHOTO_BUCKET: !Ref PhotoBucket
+          HOUSEHOLD_SCAN_LIMIT: '5'
+          GLOBAL_SCAN_LIMIT: '50'
           TABLE_NAME: !Ref Table
           LINK_SECRET_PARAM: !Ref LinkSecretParameterName
           POWERTOOLS_SERVICE_NAME: kabadi-setu
           POWERTOOLS_LOG_LEVEL: INFO
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref Table
-        - Statement:
-            - Effect: Allow
-              Action: ssm:GetParameter
-              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LinkSecretParameterName}
+      Role: !GetAtt ApiFunctionRole.Arn
       Tags:
         project: kabadi-setu
       Events:
+        CreateScan:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: /api/scans, Method: POST}
+        AnalyzeScan:
+          Type: HttpApi
+          Properties: {ApiId: !Ref HttpApi, Path: '/api/scans/{scan_id}/analyze', Method: POST}
         Health:
           Type: HttpApi
           Properties: {ApiId: !Ref HttpApi, Path: /api/health, Method: GET, Auth: {Authorizer: NONE}}

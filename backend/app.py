@@ -60,7 +60,7 @@ def problem(error):
 
 @app.get('/api/health')
 def health():
-    return {'mode': 'local' if os.getenv('LOCAL_DEV') == '1' else 'aws', 'recognition': 'not-connected'}
+    return {'mode': 'local' if os.getenv('LOCAL_DEV') == '1' else 'aws', 'recognition': 'enabled' if os.getenv('RECOGNITION_ENABLED') == 'true' else 'unavailable'}
 
 @app.get('/api/catalogue')
 def catalogue():
@@ -102,6 +102,28 @@ def pickup_action():
     data = body()
     return service().act(str(data.get('id', '')), data, key(), token=data.get('token'))
 
+def recognition():
+    if os.getenv('RECOGNITION_ENABLED') != 'true':
+        raise Problem(503, 'Photo recognition is unavailable. Please select the item manually.')
+    import boto3
+    from botocore.config import Config
+    from .recognition import Recognition, ScanStore
+    return Recognition(ScanStore(service().repo), boto3.client('s3'),
+                       boto3.client('bedrock-runtime', region_name='ap-south-1',
+                                    config=Config(connect_timeout=2, read_timeout=18, retries={'total_max_attempts':1})),
+                       os.environ['PHOTO_BUCKET'], CATALOGUE, logger,
+                       int(os.getenv('HOUSEHOLD_SCAN_LIMIT','5')), int(os.getenv('GLOBAL_SCAN_LIMIT','50')))
+
+@app.post('/api/scans')
+def create_scan():
+    household = owner()
+    return recognition().create(household, key())
+
+@app.post('/api/scans/<scan_id>/analyze')
+def analyze_scan(scan_id):
+    household = owner()
+    return recognition().analyze(household, scan_id)
+
 def handler(event, context):
     started = time.perf_counter()
     # One ID per request ties together its timing, errors and (later) model usage.
@@ -114,5 +136,5 @@ def handler(event, context):
         response = {'statusCode': 500, 'body': json.dumps({'error': 'Something went wrong. Please try again.'})}
     response.setdefault('headers', {}).update({'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'Content-Type': 'application/json'})
     logger.info('request_completed', extra={'route': event.get('routeKey', 'unknown'), 'status': response['statusCode'],
-                'duration_ms': round((time.perf_counter() - started) * 1000, 2), 'model_calls': 0})
+                'duration_ms': round((time.perf_counter() - started) * 1000, 2)})
     return response
