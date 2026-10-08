@@ -3,38 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./style.css";
 import { createApi, actionIds } from "./api.js";
 
-type Item = {
-  id: string;
-  en: string;
-  hi: string;
-  group: string;
-  icon: string;
-  check_clean: boolean;
-};
-type Row = {
-  id: string;
-  en: string;
-  hi: string;
-  quantity: number;
-  answers: { clean?: string };
-};
-type RequestRecord = {
-  id: string;
-  items: Row[];
-  language: string;
-  status: string;
-  version: number;
-  expires_at: number;
-  pickup_until?: number;
-  events: { action: string; source: string; at: number }[];
-  token?: string;
-};
-type Route = {
-  stream: string;
-  eligible: boolean;
-  reason: string;
-  reason_hi: string;
-};
+import type { Item, Row, RequestRecord, Route } from "./types";
+import { RequestView } from "./components/RequestView";
+import { PhotoScan } from "./components/PhotoScan";
 const env = (import.meta as any).env;
 const endpoint = env.VITE_API_URL || "";
 const client = createApi({
@@ -98,7 +69,9 @@ const names: Record<string, [string, string]> = {
   unresolved: ["Needs a closer look", "और जाँच ज़रूरी"],
 };
 function App() {
-  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [lang, setLang] = useState<"en" | "hi">(
+    location.pathname === "/r" ? "hi" : "en",
+  );
   const t = (en: string, hi: string) => (lang === "en" ? en : hi);
   const [items, setItems] = useState<Item[]>([]),
     [basket, setBasket] = useState<Row[]>([]),
@@ -127,6 +100,29 @@ function App() {
       return [];
     }
   });
+  const [recognitionEnabled, setRecognitionEnabled] = useState(false);
+  const [householdKey, setHouseholdKey] = useState(endpoint ? "" : "local");
+  const [usual, setUsual] = useState<string[]>([]);
+  const [shortcutCount, setShortcutCount] = useState(0);
+  useEffect(() => {
+    if (!householdKey) return;
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(householdKey + ":usual") || "[]",
+      );
+      setUsual(
+        Array.isArray(saved)
+          ? saved.filter((x) => typeof x === "string").slice(0, 30)
+          : [],
+      );
+      setPhone(localStorage.getItem(householdKey + ":collector") || "");
+      setShortcutCount(
+        Number(localStorage.getItem(householdKey + ":shortcuts")) || 0,
+      );
+    } catch {
+      setUsual([]);
+    }
+  }, [householdKey]);
   const createKey = useRef(crypto.randomUUID());
   const pendingActions = useRef(actionIds());
   const linkState = useRef(new URLSearchParams(location.hash.slice(1)));
@@ -147,7 +143,10 @@ function App() {
   }, []);
   useEffect(() => {
     api("/health")
-      .then((x) => setMode(x.mode))
+      .then((x) => {
+        setMode(x.mode);
+        setRecognitionEnabled(x.recognition === "enabled");
+      })
       .catch(() => setMode("unavailable"));
     api("/catalogue")
       .then((x) => setItems(x.items))
@@ -185,8 +184,8 @@ function App() {
   async function auth() {
     await run(async () => {
       const region = env.VITE_AWS_REGION,
-        client = env.VITE_COGNITO_CLIENT_ID;
-      if (!region || !client)
+        clientId = env.VITE_COGNITO_CLIENT_ID;
+      if (!region || !clientId)
         throw new Error("Cloud sign-in is not configured yet.");
       const action =
         authMode === "signup"
@@ -197,15 +196,15 @@ function App() {
       const payload =
         authMode === "signup"
           ? {
-              ClientId: client,
+              ClientId: clientId,
               Username: email,
               Password: password,
               UserAttributes: [{ Name: "email", Value: email }],
             }
           : authMode === "verify"
-            ? { ClientId: client, Username: email, ConfirmationCode: code }
+            ? { ClientId: clientId, Username: email, ConfirmationCode: code }
             : {
-                ClientId: client,
+                ClientId: clientId,
                 AuthFlow: "USER_PASSWORD_AUTH",
                 AuthParameters: { USERNAME: email, PASSWORD: password },
               };
@@ -222,6 +221,7 @@ function App() {
         if (!result.AuthenticationResult?.AccessToken)
           throw new Error("This account needs an additional sign-in step.");
         client.setSession(result.AuthenticationResult);
+        setHouseholdKey("ks:" + email.trim().toLowerCase());
         setSignedIn(true);
         setPassword("");
       }
@@ -261,19 +261,36 @@ function App() {
       );
       return;
     }
-    await updateBasket([
-      ...basket,
-      {
-        id: chosen.id,
-        en: chosen.en,
-        hi: chosen.hi,
-        quantity: 1,
-        answers: { clean: condition },
-      },
-    ]);
-    setChosen(null);
-    setNotice(t("Added to your basket.", "टोकरी में जोड़ दिया।"));
+    await run(async () => {
+      const saved = await api("/basket", {
+        items: [
+          ...basket,
+          {
+            id: chosen.id,
+            en: chosen.en,
+            hi: chosen.hi,
+            quantity: 1,
+            answers: { clean: condition },
+          },
+        ],
+      });
+      setBasket(saved.items);
+      createKey.current = crypto.randomUUID();
+      const next = [chosen.id, ...usual.filter((id) => id !== chosen.id)].slice(
+        0,
+        30,
+      );
+      setUsual(next);
+      try {
+        localStorage.setItem(householdKey + ":usual", JSON.stringify(next));
+      } catch {
+        /* Saving preferences is optional. */
+      }
+      setChosen(null);
+      setNotice(t("Added to your basket.", "टोकरी में जोड़ दिया।"));
+    });
   }
+
   async function create() {
     await run(async () => {
       const result = await api(
@@ -628,6 +645,41 @@ function App() {
                 )}
               </div>
               <aside>
+                {usual.length > 0 && (
+                  <section className="panel usual-items">
+                    <h2>{t("Your usual items", "आपका नियमित सामान")}</h2>
+                    {usual
+                      .map((id) => items.find((i) => i.id === id))
+                      .filter((i): i is Item => !!i)
+                      .map((item) => (
+                        <button
+                          className="secondary"
+                          key={item.id}
+                          onClick={() => {
+                            select(item);
+                            const count = shortcutCount + 1;
+                            setShortcutCount(count);
+                            try {
+                              localStorage.setItem(
+                                householdKey + ":shortcuts",
+                                String(count),
+                              );
+                            } catch {}
+                          }}
+                        >
+                          {lang === "hi" ? item.hi : item.en}
+                        </button>
+                      ))}
+                    <p className="fine">
+                      {shortcutCount}{" "}
+                      {t(
+                        "shortcut selections on this browser; no model calls for these. Check condition each time.",
+                        "बार इस ब्राउज़र पर शॉर्टकट चुना; इनमें AI कॉल नहीं हुई। हर बार स्थिति जाँचें।",
+                      )}
+                    </p>
+                  </section>
+                )}
+
                 {chosen ? (
                   <section className="panel review">
                     <p className="eyebrow">
@@ -718,20 +770,23 @@ function App() {
                     </ol>
                   </section>
                 )}
-                <section className="photo-note">
-                  <span>◎</span>
-                  <div>
-                    <strong>
-                      {t("Photo recognition is next", "फोटो पहचान अगला चरण है")}
-                    </strong>
-                    <p>
-                      {t(
-                        "This working baseline uses manual selection. No model calls or AI charges.",
-                        "इस शुरुआती संस्करण में मैनुअल चयन है। कोई AI कॉल या शुल्क नहीं।",
-                      )}
-                    </p>
-                  </div>
-                </section>
+                <PhotoScan
+                  enabled={recognitionEnabled}
+                  t={t}
+                  api={api}
+                  onSuggestion={(id) => {
+                    const item = items.find((i) => i.id === id);
+                    if (item) {
+                      select(item);
+                      setNotice(
+                        t(
+                          "Suggested item. Confirm it and check its condition.",
+                          "सुझाव मिला। सामान और उसकी स्थिति जाँचें।",
+                        ),
+                      );
+                    }
+                  }}
+                />
               </aside>
             </section>
           </>
@@ -867,6 +922,33 @@ function App() {
                           "देश कोड जोड़ें। यह नंबर सर्वर पर नहीं सहेजा जाएगा।",
                         )}
                       </small>
+                      <button
+                        className="secondary"
+                        disabled={!validPhone}
+                        onClick={() => {
+                          try {
+                            localStorage.setItem(
+                              householdKey + ":collector",
+                              digits,
+                            );
+                            setNotice(
+                              t(
+                                "Collector saved on this browser.",
+                                "कबाड़ी का नंबर इस ब्राउज़र पर सहेजा गया।",
+                              ),
+                            );
+                          } catch {
+                            setError(
+                              t(
+                                "Could not save on this browser.",
+                                "इस ब्राउज़र पर सहेजा नहीं जा सका।",
+                              ),
+                            );
+                          }
+                        }}
+                      >
+                        {t("Save this kabadiwala", "इस कबाड़ी का नंबर सहेजें")}
+                      </button>
                       <pre className="message">{message}</pre>
                       <label className="checkbox">
                         <input
@@ -976,120 +1058,6 @@ function App() {
         </span>
       </footer>
     </div>
-  );
-}
-function RequestView({
-  request,
-  recipient = false,
-  busy,
-  label,
-  t,
-  action,
-  refresh,
-}: {
-  request: RequestRecord;
-  recipient?: boolean;
-  busy: boolean;
-  label: (s: string) => string;
-  t: (a: string, b: string) => string;
-  action: (a: string) => void;
-  refresh: () => void;
-}) {
-  return (
-    <section className="panel request-card">
-      <div className="section-heading">
-        <span className={"status " + request.status}>
-          {label(request.status)}
-        </span>
-        <button className="text-button" onClick={refresh} disabled={busy}>
-          {t("Refresh", "रीफ़्रेश")} ↻
-        </button>
-      </div>
-      <h2>{t("The pickup basket", "कबाड़ की टोकरी")}</h2>
-      {request.items.map((i) => (
-        <div className="basket-row" key={i.id}>
-          <strong>{t(i.en, i.hi)}</strong>
-          <span>× {i.quantity}</span>
-        </div>
-      ))}
-      <p className="fine">
-        {t(
-          "Estimated counts. Acceptance and rates need confirmation.",
-          "अनुमानित गिनती। स्वीकृति और दर की पुष्टि ज़रूरी है।",
-        )}
-      </p>
-      <div className="action-buttons">
-        {recipient && request.status === "awaiting_response" && (
-          <>
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => action("accept")}
-            >
-              {t("Accept request", "स्वीकार करें")}
-            </button>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => action("reject")}
-            >
-              {t("Decline", "मना करें")}
-            </button>
-          </>
-        )}
-        {request.status === "accepted" && (
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() => action("collect")}
-          >
-            {t("Report collected", "संग्रह की सूचना दें")}
-          </button>
-        )}
-        {!recipient &&
-          ["awaiting_response", "accepted"].includes(request.status) && (
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => action("cancel")}
-            >
-              {t("Cancel request", "अनुरोध रद्द करें")}
-            </button>
-          )}
-      </div>
-      <h3>{t("Activity", "गतिविधि")}</h3>
-      <ol className="timeline">
-        {request.events.map((event, i) => (
-          <li key={i}>
-            <strong>
-              {
-                (
-                  {
-                    created: t("Request created", "अनुरोध बना"),
-                    accept: t("Accepted", "स्वीकार किया"),
-                    reject: t("Declined", "मना किया"),
-                    collect: t("Collection reported", "संग्रह की सूचना"),
-                    cancel: t("Cancelled", "रद्द किया"),
-                  } as Record<string, string>
-                )[event.action]
-              }
-            </strong>
-            <small>
-              {event.source === "pickup_link"
-                ? t("Through pickup link", "पिकअप लिंक से")
-                : t("By household", "घर के सदस्य द्वारा")}{" "}
-              · {new Date(event.at * 1000).toLocaleString()}
-            </small>
-          </li>
-        ))}
-      </ol>
-      <p className="fine">
-        {t(
-          "Link possession is not identity verification. Collection reports are not proof of recycling.",
-          "लिंक होना पहचान का सत्यापन नहीं है। संग्रह की सूचना रीसाइक्लिंग का प्रमाण नहीं है।",
-        )}
-      </p>
-    </section>
   );
 }
 createRoot(document.getElementById("root")!).render(<App />);
