@@ -98,3 +98,18 @@ To reproduce the subtotal after collecting one isolated flow, write `.local/scan
 ```
 
 The calculator makes no AWS calls and uses the committed price snapshot. It emits per-100 and 200,000-scan equivalents, both explicitly estimated subtotals. Its unit test uses invented arithmetic fixtures, which are not project measurements. Record source log references privately and publish only aggregate counts.
+
+## Measured isolated photo flow — October 9
+
+One recognition flow was run on the deployed stack between 15:34:05 and 15:35:52 UTC with a frozen **development** photo: upload grant, an intentionally early analyze (409), analyze, a repeated analyze that returned the saved result, and one condition-rule decision. Request IDs are in the ignored `.local/recognition-smoke-requests.json`; the matching Lambda `REPORT` lines and `database_capacity` events are in `.local/usage-events.json`.
+
+| Measured usage | Count |
+|---|---:|
+| HTTP API requests | 5 |
+| Lambda invocations / billed duration | 5 / 3,938 ms (3,254 ms of it was one cold start) |
+| DynamoDB units returned | 3 read, 14 write |
+| Rekognition image requests | 1 (the repeat did not call the provider again) |
+
+`scripts/estimate_scan_cost.py` at the recorded Mumbai list prices gives **$0.00129 for this flow** before credits and tax: Rekognition $0.00125, Lambda $0.000027, DynamoDB $0.000010, HTTP API $0.000005. The image request is about 97% of the four-service subtotal, so per-100 and projected figures stay close to the inference-only estimate: **$0.129 per 100 photo scans**, and an illustrative $259 for 200,000 photo scans a month (a projection, not traffic; current quotas prevent it).
+
+The condition-rule step on its own used one API request, 2 ms of billed Lambda time and no database or model call, about $0.000001. Choosing an item manually or from *Your usual items* therefore avoids almost all of the per-scan cost. This is a list-price estimate from one measured flow, not a bill: S3, logs, hosting, Cognito and bandwidth are excluded, and the single cold start makes this sample's Lambda share higher than a warm average.
