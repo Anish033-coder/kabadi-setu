@@ -30,3 +30,13 @@ A fresh clone installed and passed the full tests/build. The browser tool report
 ## 2026-10-09 — browser and live transport verification
 
 The live smoke test now uses curl with bounded retries after Python HTTPS connections repeatedly timed out. Credentials are supplied via stdin and response bodies are omitted from failure messages. The final API smoke passed and removed temporary users/records. A fresh hosted browser tab also completed the manual household-to-recipient flow in Hindi; the earlier offline browser error no longer reproduced. Bedrock authorization is still unresolved, so recognition stays disabled.
+
+## 2026-10-09 — Bedrock escalation and provider fallback
+
+User reports CloudTrail confirms Converse failures (`ValidationException: Operation not allowed`), suspects the known AISPL/India-billing restriction, and has opened an AWS Support case. This supplements our failed probes; the cause remains pending support confirmation. Added a shared Recognizer interface, a conservative DetectLabels mapping, explicit household confirmation, and a config-selected Bedrock adapter. Retained single-call quotas, exact-byte validation and no automatic cross-provider retry. See decision 005 for the narrowly scoped IAM exception and cost accounting.
+
+## 2026-10-09 — unfinished upload and frame protection
+
+The user reproduced an early analyze call returning a generic error. AWS GetObject documentation confirms that without ListBucket, a missing key can return AccessDenied. The scan service now translates NoSuchKey, AccessDenied and 404 around the single S3 read into a helpful 409. The scan remains waiting and quota/model calls are untouched. It logs the S3 code for distinguishing persistent IAM faults; no ListBucket permission was added. Regression tests cover all three codes, successful retry after upload, and unrelated S3 errors.
+
+Amplify header configuration is now versioned in frontend/customHttp.yml and reapplied by the manual deployment script. Live /r HTTP checks confirmed Content-Security-Policy: frame-ancestors 'none' and X-Frame-Options: DENY alongside the existing privacy headers.

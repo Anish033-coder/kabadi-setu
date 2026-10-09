@@ -1,6 +1,6 @@
 # Recognition evaluation
 
-No evaluation results exist yet. Both account-access probes failed, and no real photo set has been supplied. A synthetic green square is an access test, not an accuracy example.
+A limited public-photo benchmark is now recorded in INTERNET_PHOTOS.md and results/. Bedrock remains blocked; Rekognition calls succeeded. No original household photo set has been supplied. A synthetic green square is an access test, not an accuracy example.
 
 Collect 30–50 original item photos with no people, addresses or documents. Label each with an existing catalogue ID or unknown before running the model. Save photos under `eval/photos/` (ignored by Git). Create `eval/manifest.csv` with columns `path,label,split`, where path is relative to this directory and split is dev or heldout. Keep every image of the same physical item in the same split; the validator also rejects identical bytes appearing twice. Use development examples to choose photo size, then freeze the configuration before the held-out run.
 

@@ -1,0 +1,75 @@
+{
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRekognition/current/ap-south-1/index.json",
+  "retrieved": "2026-10-09",
+  "publicationDate": "2026-09-11T12:45:04Z",
+  "sku": "6A7WT3FMU4CBTST7",
+  "product": {
+    "sku": "6A7WT3FMU4CBTST7",
+    "productFamily": "Rekognition Image API",
+    "attributes": {
+      "servicecode": "AmazonRekognition",
+      "location": "Asia Pacific (Mumbai)",
+      "locationType": "AWS Region",
+      "group": "Rekognition Image API Requests",
+      "groupDescription": "Number of images processed using DetectFaces, DetectModerationLabels, DetectLabels, DetectProtectiveEquipment, RecognizeCelebrities APIs",
+      "usagetype": "APS3-Group2-ImagesProcessed",
+      "operation": "",
+      "regionCode": "ap-south-1",
+      "servicename": "Amazon Rekognition"
+    }
+  },
+  "terms": {
+    "6A7WT3FMU4CBTST7.JRTCKXETXF": {
+      "offerTermCode": "JRTCKXETXF",
+      "sku": "6A7WT3FMU4CBTST7",
+      "effectiveDate": "2026-06-01T00:00:00Z",
+      "priceDimensions": {
+        "6A7WT3FMU4CBTST7.JRTCKXETXF.SB2VSFF4TP": {
+          "rateCode": "6A7WT3FMU4CBTST7.JRTCKXETXF.SB2VSFF4TP",
+          "description": "Images Processed: Non Free Tier : 0 - 1000000 images processed per month",
+          "beginRange": "0",
+          "endRange": "1000000",
+          "unit": "Images Processed",
+          "pricePerUnit": {
+            "USD": "0.0012500000"
+          },
+          "appliesTo": []
+        },
+        "6A7WT3FMU4CBTST7.JRTCKXETXF.H3BBRCJ78Y": {
+          "rateCode": "6A7WT3FMU4CBTST7.JRTCKXETXF.H3BBRCJ78Y",
+          "description": "Images Processed: Non Free Tier : 1000000 - 5000000 images processed per month",
+          "beginRange": "1000000",
+          "endRange": "5000000",
+          "unit": "Images Processed",
+          "pricePerUnit": {
+            "USD": "0.0010000000"
+          },
+          "appliesTo": []
+        },
+        "6A7WT3FMU4CBTST7.JRTCKXETXF.8GSZJDB5W5": {
+          "rateCode": "6A7WT3FMU4CBTST7.JRTCKXETXF.8GSZJDB5W5",
+          "description": "Images Processed: Non Free Tier : 5M-30M images processed per month",
+          "beginRange": "5000000",
+          "endRange": "35000000",
+          "unit": "Images Processed",
+          "pricePerUnit": {
+            "USD": "0.0007500000"
+          },
+          "appliesTo": []
+        },
+        "6A7WT3FMU4CBTST7.JRTCKXETXF.SHZJ45KC4M": {
+          "rateCode": "6A7WT3FMU4CBTST7.JRTCKXETXF.SHZJ45KC4M",
+          "description": "Images Processed: Non Free Tier: 35M+ images processed per month",
+          "beginRange": "35000000",
+          "endRange": "Inf",
+          "unit": "Images Processed",
+          "pricePerUnit": {
+            "USD": "0.0003125000"
+          },
+          "appliesTo": []
+        }
+      },
+      "termAttributes": {}
+    }
+  }
+}

@@ -10,7 +10,7 @@ Manual catalogue selection, deterministic sorting guidance, baskets, pickup requ
 
 No collector has validated rates or minimum quantities, so the app prepares a quote request. Sending a WhatsApp link does not prove delivery. A link response is not identity verification or proof of physical collection/recycling.
 
-The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. The frontend is hosted on Amplify; its recipient route and privacy headers have been verified over HTTP. A hosted-browser demo also passed sign-in, manual sorting, basket saving, request creation and the Hindi recipient acceptance/collection-report flow. Recognition is implemented behind a disabled flag because Bedrock reports this account is not authorized. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; they reject requests while recognition is disabled. No model savings or real-world impact has been measured.
+The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. The frontend is hosted on Amplify; its recipient route and privacy headers have been verified over HTTP. A hosted-browser demo also passed sign-in, manual sorting, basket saving, request creation and the Hindi recipient acceptance/collection-report flow. Rekognition recognition is now enabled in Mumbai; Bedrock remains unavailable for this account. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; the feature can be disabled without changing the manual path. A small public-photo benchmark is recorded in eval/INTERNET_PHOTOS.md; no real-world impact or model-cost savings is claimed.
 
 ## Run locally
 
@@ -75,8 +75,12 @@ Use the shared demo credentials supplied privately by the author; they are never
 
 ## Recognition limits and evaluation
 
-Recognition is disabled by default and has no Bedrock permission while disabled. Once authorized, one direct Nova Lite call suggests a catalogue ID. Invalid output becomes unknown; no model tools can change a basket or pickup. The daily UTC limits are five inference reservations per household and fifty for the whole app. Upload grants are also limited. Errors do not automatically refund a possibly billed call. A new scan of the same photo is not yet deduplicated by hash across scans.
+Recognition is disabled by default and has no Bedrock permission while disabled. Set `RecognitionProvider=rekognition` for one DetectLabels call with a conservative code mapping, or `bedrock` for one direct Nova Lite call after its authorization is resolved. The household must confirm the suggested item before condition checks. Invalid output becomes unknown; no model tools can change a basket or pickup. The daily UTC limits are five inference reservations per household and fifty for the whole app. Upload grants are also limited. Errors do not automatically refund a possibly billed call. A new scan of the same photo is not yet deduplicated by hash across scans.
 
-See `eval/README.md` for the 30–50-photo plan. No real held-out dataset or measured recognition savings exists yet. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
+See `eval/README.md` for the 30–50-photo plan. A 30-image public-photo benchmark is complete: 20 development and 10 held out. Held-out results were 5/10 correct including expected-unknown negatives, with only 2/7 supported items recognised. It does not establish Jaipur-user performance; no recognition cost savings is claimed. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
 
 GitHub Actions checks local DynamoDB integration, IAM policies, Python tests, frontend tests and the frontend build. Its workflow is committed locally but has not run on GitHub while pushes are paused.
+
+## Recognition fallback status — October 9
+
+The Rekognition and Bedrock adapters share the same scan ownership, validation, quota and saved-result flow. The template defaults to Rekognition with recognition **disabled**. Enable only after a successful account probe and reviewed deployment. The IAM test permits one documented global-resource exception: `rekognition:DetectLabels`, restricted to Mumbai. See [decision 005](docs/decisions/005-recognition-providers.md). Rekognition is deployed and the synthetic hosted upload/analyze/repeat check passed. This proves connectivity and saved-result reuse, not accuracy on real items.
