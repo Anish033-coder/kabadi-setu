@@ -5,9 +5,8 @@ or passwords. This invokes normal AWS services but never calls a model.
 """
 import json
 import secrets
+import subprocess
 import uuid
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError
 from aws_identity import require_non_root
 
 
@@ -28,13 +27,18 @@ def main():
             headers['Authorization'] = 'Bearer ' + token
         if key:
             headers['Idempotency-Key'] = key
-        request = Request(outputs['ApiUrl'] + '/api' + path, headers=headers,
-                          data=None if body is None else json.dumps(body).encode())
-        try:
-            with urlopen(request, timeout=20) as response:
-                status, raw = response.status, response.read()
-        except HTTPError as error:
-            status, raw = error.code, error.read()
+        # Pass credentials through stdin, never command arguments or output.
+        config = ['url = '+json.dumps(outputs['ApiUrl']+'/api'+path)]
+        config += ['header = '+json.dumps(name+': '+value) for name,value in headers.items()]
+        if body is not None:
+            config += ['request = "POST"', 'data = '+json.dumps(json.dumps(body))]
+        response = subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','20',
+                                   '--retry','2','--retry-all-errors','--config','-','--write-out','\n%{http_code}'],
+                                  input='\n'.join(config)+'\n',text=True,capture_output=True)
+        if response.returncode:
+            raise ConnectionError('HTTP transport failed before a response could be verified.')
+        raw, status_text = response.stdout.rsplit('\n',1)
+        status = int(status_text)
         if status != expected:
             # Don't print the body: a future endpoint could return sensitive fields.
             raise AssertionError(f'{path.split("/")[1]} returned {status}; expected {expected}')
