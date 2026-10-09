@@ -101,6 +101,7 @@ function App() {
     }
   });
   const [recognitionEnabled, setRecognitionEnabled] = useState(false);
+  const [recognitionProvider, setRecognitionProvider] = useState("");
   const [householdKey, setHouseholdKey] = useState(endpoint ? "" : "local");
   const [usual, setUsual] = useState<string[]>([]);
   const [shortcutCount, setShortcutCount] = useState(0);
@@ -146,6 +147,7 @@ function App() {
       .then((x) => {
         setMode(x.mode);
         setRecognitionEnabled(x.recognition === "enabled");
+        setRecognitionProvider(x.recognition_provider || "");
       })
       .catch(() => setMode("unavailable"));
     api("/catalogue")
@@ -772,6 +774,11 @@ function App() {
                 )}
                 <PhotoScan
                   enabled={recognitionEnabled}
+                  provider={recognitionProvider}
+                  itemName={(id) => {
+                    const item = items.find((i) => i.id === id);
+                    return item ? t(item.en, item.hi) : id;
+                  }}
                   t={t}
                   api={api}
                   onSuggestion={(id) => {

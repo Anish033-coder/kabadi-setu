@@ -3,16 +3,20 @@ import { preparePhoto } from "../photo";
 
 type Props = {
   enabled: boolean;
+  provider: string;
+  itemName: (id: string) => string;
   t: (en: string, hi: string) => string;
   api: (path: string, body?: unknown, key?: string) => Promise<any>;
   onSuggestion: (id: string) => void;
 };
-export function PhotoScan({ enabled, t, api, onSuggestion }: Props) {
+export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }: Props) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const [suggestion, setSuggestion] = useState<string | null>(null);
   async function scan(file: File) {
     setBusy(true);
     setMessage("");
+    setSuggestion(null);
     try {
       const image = await preparePhoto(file);
       const grant = await api("/scans", {}, crypto.randomUUID());
@@ -39,7 +43,7 @@ export function PhotoScan({ enabled, t, api, onSuggestion }: Props) {
             "फोटो स्पष्ट नहीं है। कृपया सामान खुद चुनें।",
           ),
         );
-      } else onSuggestion(result.item_id);
+      } else setSuggestion(result.item_id);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Please use manual search.",
@@ -54,7 +58,10 @@ export function PhotoScan({ enabled, t, api, onSuggestion }: Props) {
       {enabled ? (
         <>
           <p>
-            {t(
+            {provider === "rekognition" ? t(
+              "Only photograph the item. Recognition runs in AWS Mumbai. Photos are scheduled for deletion after one day.",
+              "केवल सामान की फोटो लें। पहचान AWS मुंबई में होती है। एक दिन बाद फोटो हटाने की प्रक्रिया शुरू होगी।",
+            ) : t(
               "Only photograph the item. Photo processing may occur across APAC. Photos are scheduled for deletion after one day.",
               "केवल सामान की फोटो लें। पहचान के लिए फोटो APAC क्षेत्रों में भेजी जा सकती है। एक दिन बाद फोटो हटाने की प्रक्रिया शुरू होगी।",
             )}
@@ -83,6 +90,19 @@ export function PhotoScan({ enabled, t, api, onSuggestion }: Props) {
             "फोटो पहचान अभी उपलब्ध नहीं है। सामान खुद चुनें—AI कॉल नहीं होगी।",
           )}
         </p>
+      )}
+      {suggestion && (
+        <div>
+          <p>{t("Does this look right?", "क्या यह सही है?")} {itemName(suggestion)}</p>
+          <button type="button" onClick={() => {
+            onSuggestion(suggestion);
+            setSuggestion(null);
+          }}>{t("Yes, check this item", "हाँ, इस सामान की जाँच करें")}</button>
+          <button type="button" onClick={() => {
+            setSuggestion(null);
+            setMessage(t("Please choose the item manually.", "कृपया सामान खुद चुनें।"));
+          }}>{t("No, choose manually", "नहीं, खुद चुनें")}</button>
+        </div>
       )}
       <p role="status">{message}</p>
     </section>
