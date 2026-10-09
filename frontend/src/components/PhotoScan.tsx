@@ -13,10 +13,22 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }:
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [clarification, setClarification] = useState<{kind: string; options: string[]} | null>(null);
+  function choose(id: string) {
+    onSuggestion(id);
+    setSuggestion(null);
+    setClarification(null);
+  }
+  function manual() {
+    setSuggestion(null);
+    setClarification(null);
+    setMessage(t("Please search the catalogue or choose an item.", "कृपया सूची में सामान खोजें या चुनें।"));
+  }
   async function scan(file: File) {
     setBusy(true);
     setMessage("");
     setSuggestion(null);
+    setClarification(null);
     try {
       const image = await preparePhoto(file);
       const grant = await api("/scans", {}, crypto.randomUUID());
@@ -36,10 +48,12 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }:
           ),
         );
       const result = await api(`/scans/${grant.id}/analyze`, {});
-      if (result.status !== "complete" || result.item_id === "unknown") {
+      if (result.status === "complete" && result.clarification?.options?.length) {
+        setClarification(result.clarification);
+      } else if (result.status !== "complete" || result.item_id === "unknown") {
         setMessage(
           t(
-            "Not sure about this photo. Please choose the item below.",
+            "Not sure about this photo. Please search the catalogue or choose an item.",
             "फोटो स्पष्ट नहीं है। कृपया सामान खुद चुनें।",
           ),
         );
@@ -94,15 +108,23 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }:
       {suggestion && (
         <div>
           <p>{t("Does this look right?", "क्या यह सही है?")} {itemName(suggestion)}</p>
-          <button type="button" onClick={() => {
-            onSuggestion(suggestion);
-            setSuggestion(null);
-          }}>{t("Yes, check this item", "हाँ, इस सामान की जाँच करें")}</button>
-          <button type="button" onClick={() => {
-            setSuggestion(null);
-            setMessage(t("Please choose the item manually.", "कृपया सामान खुद चुनें।"));
-          }}>{t("No, choose manually", "नहीं, खुद चुनें")}</button>
+          <button className="primary" type="button" onClick={() => choose(suggestion)}>{t("Yes, check this item", "हाँ, इस सामान की जाँच करें")}</button>
+          <button className="secondary" type="button" onClick={manual}>{t("No, choose manually", "नहीं, खुद चुनें")}</button>
         </div>
+      )}
+      {clarification && (
+        <fieldset className="photo-choices">
+          <legend>{clarification.kind === "bottle"
+            ? t("Which kind of bottle is it?", "यह किस तरह की बोतल है?")
+            : clarification.kind === "can"
+              ? t("Is this an aluminium drink can?", "क्या यह एल्यूमिनियम का पेय कैन है?")
+              : t("Which kind of container is it?", "यह किस तरह का डिब्बा है?")}</legend>
+          <p>{t("The photo cannot confirm the material. Choose only if you know.", "फोटो से सामग्री की पुष्टि नहीं हो सकती। पता हो तभी चुनें।")}</p>
+          {clarification.options.map((id) => (
+            <button className="secondary" type="button" key={id} onClick={() => choose(id)}>{itemName(id)}</button>
+          ))}
+          <button className="secondary" type="button" onClick={manual}>{t("None of these, choose manually", "इनमें से नहीं / पता नहीं — खुद चुनें")}</button>
+        </fieldset>
       )}
       <p role="status">{message}</p>
     </section>

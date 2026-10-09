@@ -787,8 +787,8 @@ function App() {
                       select(item);
                       setNotice(
                         t(
-                          "Suggested item. Confirm it and check its condition.",
-                          "सुझाव मिला। सामान और उसकी स्थिति जाँचें।",
+                          "Item chosen. Now check its condition.",
+                          "सामान चुना गया। अब उसकी स्थिति जाँचें।",
                         ),
                       );
                     }

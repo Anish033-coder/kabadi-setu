@@ -155,3 +155,17 @@ def test_other_s3_errors_are_not_reported_as_upload_conflicts(service):
     with pytest.raises(ClientError): service.analyze(owner, scan['id'])
     assert service.store.get(scan['id'], owner)['state'] == 'waiting'
     service.recognizer.client.converse.assert_not_called()
+
+
+def test_material_question_is_saved_without_deciding_a_route(service):
+    from backend.recognizers import RekognitionRecognizer
+    client=Mock()
+    client.detect_labels.return_value={'Labels':[{'Name':'Can','Confidence':99}]}
+    service.recognizer=RekognitionRecognizer(client)
+    owner=str(uuid4());scan=service.create(owner,str(uuid4()))
+    result=service.analyze(owner,scan['id'])
+    assert result['item_id']=='unknown'
+    assert result['clarification']=={'kind':'can','options':['aluminium-can']}
+    assert 'stream' not in result
+    assert service.analyze(owner,scan['id'])==result
+    client.detect_labels.assert_called_once()

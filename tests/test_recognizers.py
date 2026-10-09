@@ -15,11 +15,11 @@ def labels(*names, confidence=99):
     (['Newspaper', 'Paper'], 'newspaper'),
     (['Cardboard', 'Cardboard Box'], 'cardboard'),
     (['Laptop', 'Computer'], 'electronics'),
-    (['Beer Bottle', 'Bottle', 'Beer'], 'glass-bottle'),
+    (['Beer Bottle', 'Bottle', 'Beer'], 'unknown'),
     (['Jar', 'Plastic'], 'rigid-plastic'),
     (['Jar'], 'unknown'),
     (['Can', 'Aluminium', 'Tin'], 'unknown'),
-    (['Beer Bottle', 'Plastic Bottle'], 'unknown'),
+    (['Beer Bottle', 'Plastic Bottle'], 'pet-bottle'),
     (['Bottle', 'Plastic'], 'unknown'),
     (['Metal', 'Can'], 'unknown'),
     (['Newspaper', 'Battery'], 'unknown'),
@@ -54,3 +54,28 @@ def test_invalid_provider_fails_without_creating_client():
     session = Mock()
     with pytest.raises(ValueError): make_recognizer('typo', session)
     session.client.assert_not_called()
+
+
+@pytest.mark.parametrize('names,kind', [
+    (['Bottle', 'Jar'], 'bottle'),
+    (['Beer Bottle'], 'bottle'),
+    (['Jar'], 'container'),
+    (['Can', 'Tin', 'Aluminium'], 'can'),
+    (['Can', 'Bottle'], None),
+    (['Bottle', 'Newspaper', 'Battery'], None),
+    (['Ice'], None),
+])
+def test_ambiguous_material_asks_instead_of_guessing(names, kind):
+    client=Mock()
+    client.detect_labels.return_value={'Labels':labels(*names)}
+    result=RekognitionRecognizer(client).recognize(b'image', CATALOGUE)
+    assert result.item_id == 'unknown'
+    assert result.clarification == kind
+    assert client.detect_labels.call_count == 1
+
+
+def test_clarification_options_are_catalogue_scoped():
+    from backend.clarifications import options_for
+    assert options_for('bottle', CATALOGUE) == ['pet-bottle', 'glass-bottle']
+    assert options_for('bottle', {'items':[{'id':'glass-bottle'}]}) == ['glass-bottle']
+    assert options_for('untrusted', CATALOGUE) == []

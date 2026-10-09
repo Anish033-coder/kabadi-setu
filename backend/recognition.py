@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from .domain import Conflict, Problem, action_key
 from .images import MAX_BYTES, read_photo
 from .recognizers import Recognizer
+from .clarifications import options_for
 
 MODEL = 'apac.amazon.nova-lite-v1:0'
 
@@ -148,6 +149,10 @@ class Recognition:
             allowed = {item['id'] for item in self.catalogue['items']}
             item_id = suggestion.item_id if suggestion.item_id in allowed else 'unknown'
             result.update(item_id=item_id,status='complete')
+            choices = options_for(suggestion.clarification, self.catalogue)
+            if item_id == 'unknown' and choices:
+                result['clarification'] = {'kind':suggestion.clarification, 'options':choices}
+            fields['needs_clarification'] = 'clarification' in result
         except Exception as error:
             # Never retry inference after an ambiguous failure or refund a possibly billed call.
             fields['error_type'] = type(error).__name__

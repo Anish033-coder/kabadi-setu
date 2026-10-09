@@ -2,9 +2,12 @@
 export async function preparePhoto(file: File): Promise<Blob> {
   if (file.size > 20 * 1024 * 1024)
     throw new Error("Choose a photo smaller than 20 MB.");
-  const bitmap = await createImageBitmap(file, {
-    imageOrientation: "from-image",
-  });
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    throw new Error("This photo format could not be read. Try JPEG or PNG, or use manual search.");
+  }
   try {
     const ratio = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");

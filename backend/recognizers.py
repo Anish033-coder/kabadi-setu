@@ -1,6 +1,7 @@
 """Interchangeable image suggestions; neither provider decides sorting or pickup."""
 from dataclasses import dataclass, field
 from typing import Protocol
+from .clarifications import question_for
 
 
 @dataclass(frozen=True)
@@ -9,6 +10,7 @@ class Suggestion:
     usage: dict = field(default_factory=dict)
     # Development evaluation may inspect these; application logs never include them.
     labels: tuple = ()
+    clarification: str | None = None
 
 
 class Recognizer(Protocol):
@@ -45,8 +47,6 @@ LABEL_TO_CATALOGUE = {
     'notebook': 'notebooks',
     'plastic bottle': 'pet-bottle',
     'glass bottle': 'glass-bottle',
-    # A tentative non-basket suggestion; the household must confirm the material.
-    'beer bottle': 'glass-bottle',
     'battery': 'battery',
     'mobile phone': 'electronics',
     'cell phone': 'electronics',
@@ -56,21 +56,21 @@ LABEL_TO_CATALOGUE = {
     'fluorescent lamp': 'bulb',
 }
 MIN_CONFIDENCE = 90
-MAPPING_VERSION = '2026-10-09.2'
+MAPPING_VERSION = '2026-10-09.3'
+
+
+def confident_labels(labels):
+    return {label['Name'].strip().lower() for label in labels
+            if isinstance(label.get('Name'), str)
+            and isinstance(label.get('Confidence'), (int, float))
+            and MIN_CONFIDENCE <= label['Confidence'] <= 100}
 
 
 def map_labels(labels, catalogue):
     allowed = {item['id'] for item in catalogue['items']}
     candidates = set()
-    confident_names = set()
-    for label in labels:
-        name, confidence = label.get('Name'), label.get('Confidence')
-        if not isinstance(name, str) or not isinstance(confidence, (int, float)):
-            continue
-        if not MIN_CONFIDENCE <= confidence <= 100:
-            continue
-        name = name.strip().lower()
-        confident_names.add(name)
+    confident_names = confident_labels(labels)
+    for name in confident_names:
         item_id = LABEL_TO_CATALOGUE.get(name)
         if item_id in allowed:
             candidates.add(item_id)
@@ -92,12 +92,18 @@ class RekognitionRecognizer:
             Image={'Bytes': raw}, Features=['GENERAL_LABELS'],
             MaxLabels=50, MinConfidence=MIN_CONFIDENCE,
         )
-        return Suggestion(map_labels(response.get('Labels', []), catalogue), {
+        labels = response.get('Labels', [])
+        item_id = map_labels(labels, catalogue)
+        names = confident_labels(labels)
+        # Do not narrow conflicting recognised objects into a misleading question.
+        known = {LABEL_TO_CATALOGUE[n] for n in names if n in LABEL_TO_CATALOGUE}
+        question = question_for(names) if item_id == 'unknown' and len(known) <= 1 else None
+        return Suggestion(item_id, {
             'image_requests': 1,
             'label_model_version': response.get('LabelModelVersion'),
             'mapping_version': MAPPING_VERSION,
         }, labels=tuple({'name':label.get('Name'), 'confidence':label.get('Confidence')}
-                        for label in response.get('Labels', [])))
+                        for label in labels), clarification=question)
 
 
 def make_recognizer(provider, session):
