@@ -11,6 +11,10 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
+  RecognitionProvider:
+    Type: String
+    Default: rekognition
+    AllowedValues: [rekognition, bedrock]
   AllowedOrigins:
     Type: CommaDelimitedList
     Default: 'http://localhost:5173'
@@ -18,6 +22,8 @@ Parameters:
 
 Conditions:
   CanRecognize: !Equals [!Ref RecognitionEnabled, 'true']
+  UseBedrock: !And [!Condition CanRecognize, !Equals [!Ref RecognitionProvider, bedrock]]
+  UseRekognition: !And [!Condition CanRecognize, !Equals [!Ref RecognitionProvider, rekognition]]
 
 Resources:
   UserPool:
@@ -162,7 +168,7 @@ Resources:
                 Action: [s3:GetObject, s3:PutObject]
                 Resource: !Sub ${PhotoBucket.Arn}/photos/*
               - !If
-                - CanRecognize
+                - UseBedrock
                 - Effect: Allow
                   Action: bedrock:InvokeModel
                   Resource:
@@ -173,6 +179,15 @@ Resources:
                     - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-1::foundation-model/amazon.nova-lite-v1:0
                     - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-2::foundation-model/amazon.nova-lite-v1:0
                     - !Sub arn:${AWS::Partition}:bedrock:ap-northeast-3::foundation-model/amazon.nova-lite-v1:0
+                - !Ref AWS::NoValue
+              - !If
+                - UseRekognition
+                - Effect: Allow
+                  Action: rekognition:DetectLabels
+                  Resource: '*'
+                  Condition:
+                    StringEquals:
+                      aws:RequestedRegion: ap-south-1
                 - !Ref AWS::NoValue
       Tags: [{Key: project, Value: kabadi-setu}]
 
@@ -193,6 +208,7 @@ Resources:
       Environment:
         Variables:
           RECOGNITION_ENABLED: !Ref RecognitionEnabled
+          RECOGNITION_PROVIDER: !Ref RecognitionProvider
           PHOTO_BUCKET: !Ref PhotoBucket
           HOUSEHOLD_SCAN_LIMIT: '5'
           GLOBAL_SCAN_LIMIT: '50'

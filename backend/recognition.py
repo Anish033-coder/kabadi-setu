@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from .domain import Conflict, Problem, action_key
 from .images import MAX_BYTES, read_photo
+from .recognizers import Recognizer
 
 MODEL = 'apac.amazon.nova-lite-v1:0'
 
@@ -76,8 +77,8 @@ class ScanStore:
 
 
 class Recognition:
-    def __init__(self, store, s3, bedrock, bucket, catalogue, logger, household_limit=5, global_limit=50, clock=time.time):
-        self.store, self.s3, self.bedrock = store, s3, bedrock
+    def __init__(self, store, s3, recognizer: Recognizer, bucket, catalogue, logger, household_limit=5, global_limit=50, clock=time.time):
+        self.store, self.s3, self.recognizer = store, s3, recognizer
         self.bucket, self.catalogue, self.logger = bucket, catalogue, logger
         self.household_limit, self.global_limit, self.clock = household_limit, global_limit, clock
 
@@ -125,13 +126,16 @@ class Recognition:
             raise Problem(429,'Daily photo limit reached. Manual search is still available.')
         started = time.perf_counter()
         result = {'id':scan_id,'item_id':'unknown','sha256':photo['sha256'],'status':'unavailable'}
-        fields = {'scan_id':scan_id,'household_id':owner,'model_id':MODEL,'model_calls':1,
+        fields = {'scan_id':scan_id,'household_id':owner,'provider':self.recognizer.provider,'region':'ap-south-1',
+                  'model_id':self.recognizer.model_id,'model_calls':1,
+                  'image_requests':1 if self.recognizer.provider == 'rekognition' else 0,
                   'width':photo['width'],'height':photo['height'],'input_tokens':None,'output_tokens':None}
         try:
-            response = infer(self.bedrock,photo['bytes'],self.catalogue)
-            fields.update(input_tokens=response.get('usage',{}).get('inputTokens'),
-                          output_tokens=response.get('usage',{}).get('outputTokens'))
-            result.update(item_id=parse_suggestion(response,self.catalogue),status='complete')
+            suggestion = self.recognizer.recognize(photo['bytes'],self.catalogue)
+            fields.update(suggestion.usage)
+            allowed = {item['id'] for item in self.catalogue['items']}
+            item_id = suggestion.item_id if suggestion.item_id in allowed else 'unknown'
+            result.update(item_id=item_id,status='complete')
         except Exception as error:
             # Never retry inference after an ambiguous failure or refund a possibly billed call.
             fields['error_type'] = type(error).__name__
