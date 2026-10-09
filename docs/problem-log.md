@@ -47,3 +47,9 @@ Amplify header configuration is now versioned in frontend/customHttp.yml and rea
 Committed mapping `.3` after the `.2` held-out benchmark. Generic can labels now offer clarification with an unconditional manual escape, so a steel tin is not forced into aluminium. The earlier Beer Bottle-to-glass shortcut was removed. `.3` is a post-benchmark UX change, not yet evaluated; archived `.2` numbers remain unchanged.
 
 Prepared a no-call Bedrock comparison preview, private phone-photo preparation with group-preserving splits, and opt-in anonymous timing-trial export. An expired AWS SSO session blocked deployment and new usage-log measurement; local testing and documentation continued. Added returned DynamoDB capacity logging to close a measurement gap without inventing infrastructure costs.
+
+## 2026-10-09 evening — handover and measurement
+
+- **Bedrock cause narrowed.** CloudTrail recorded both probe calls failing with `ValidationException: Operation not allowed` (ap-south-1 16:26:03 UTC, us-east-1 16:26:29 UTC). The APAC Nova Lite profile exists and is active; availability checks show every model checked as `NOT_AUTHORIZED`; the account is the Organizations management account with only `FullAWSAccess`. This matches the public re:Post report for AISPL accounts. AWS has not confirmed the cause; the support case remains open. Recognition stays on Rekognition.
+- **Builder handover.** Codex's weekly limit was reached on October 9; Claude continues the remaining work. Commits from here say which assistant wrote them.
+- **Isolated cost measured.** One photo flow cost about $0.00129 at list prices, 97% of it the image request (see `docs/cost.md`).
