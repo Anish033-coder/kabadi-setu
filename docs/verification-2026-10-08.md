@@ -65,3 +65,14 @@ The final live smoke run passed sign-in, unauthenticated denial, cross-household
 A fresh in-app browser tab successfully signed in with the private demo household. Selected Newspapers, confirmed clean/dry condition, saved one item, and prepared a request. The usual-items shortcut appeared after adding the item. Opened the recipient test link: Hindi was the default, no collector login was requested, and Accept followed by Report collection produced the expected status/history. No WhatsApp message was sent and no collector was contacted. This demo record is synthetic; it is not evidence of physical collection.
 
 Recognition displayed its unavailable/manual-fallback message. Physical-phone mobile-data testing, real-photo evaluation, cost reconciliation and Bedrock authorization remain outstanding. No submission tag or GitHub push was made.
+
+## October 9 — submission preparation, local verification
+
+- Clarification mapping `.3` committed with the mandatory manual escape. Published held-out numbers remain mapping `.2` only; `.3` is a post-benchmark UX change, not yet evaluated.
+- Bedrock comparison dry run selected the frozen ten held-out images at 512 pixels without AWS requests. Real execution requires both paid-call opt-in and access confirmation. No Bedrock calls were made.
+- Photo importer tests passed for orientation, metadata removal, duplicate handling, group-preserving splits, overwrite refusal and changed-photo rejection. Original household photos are still pending.
+- Backend suite passed 100 tests before adding the cost calculator; the additional calculator test passed separately. Frontend passed seven tests; TypeScript/Vite and SAM Linux arm64 container builds succeeded. No database tests were skipped in the full run.
+- TrialPanel is an extracted component. Timing records include aborted trials and have no names, item IDs or timestamps. They exist only in page memory until export. No human timing results were collected.
+- Fresh AWS verification failed with an expired SSO token; renewal was requested. These local changes have not been deployed. The current live recognition mapping remains `.2` until a verified deployment.
+- Responsive local-browser verification was attempted at 390×844, but the browser client refused the loopback page with ERR_BLOCKED_BY_CLIENT. The viewport override was reset. This is not a passed phone test, and no physical-phone/mobile-data check is claimed.
+- Architecture, trial protocol, video shot list and factual blog sections are drafts. Blog publication, GitHub push/public visibility and submission tag remain unauthorised and were not performed.

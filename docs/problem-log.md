@@ -40,3 +40,10 @@ User reports CloudTrail confirms Converse failures (`ValidationException: Operat
 The user reproduced an early analyze call returning a generic error. AWS GetObject documentation confirms that without ListBucket, a missing key can return AccessDenied. The scan service now translates NoSuchKey, AccessDenied and 404 around the single S3 read into a helpful 409. The scan remains waiting and quota/model calls are untouched. It logs the S3 code for distinguishing persistent IAM faults; no ListBucket permission was added. Regression tests cover all three codes, successful retry after upload, and unrelated S3 errors.
 
 Amplify header configuration is now versioned in frontend/customHttp.yml and reapplied by the manual deployment script. Live /r HTTP checks confirmed Content-Security-Policy: frame-ancestors 'none' and X-Frame-Options: DENY alongside the existing privacy headers.
+
+
+## 2026-10-09 — clarification and evidence boundaries
+
+Committed mapping `.3` after the `.2` held-out benchmark. Generic can labels now offer clarification with an unconditional manual escape, so a steel tin is not forced into aluminium. The earlier Beer Bottle-to-glass shortcut was removed. `.3` is a post-benchmark UX change, not yet evaluated; archived `.2` numbers remain unchanged.
+
+Prepared a no-call Bedrock comparison preview, private phone-photo preparation with group-preserving splits, and opt-in anonymous timing-trial export. An expired AWS SSO session blocked deployment and new usage-log measurement; local testing and documentation continued. Added returned DynamoDB capacity logging to close a measurement gap without inventing infrastructure costs.

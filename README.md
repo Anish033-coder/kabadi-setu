@@ -4,6 +4,22 @@
 
 A Jaipur prototype for sorting household items, keeping a scrap basket and asking a collector for a pickup through the household's own WhatsApp.
 
+**Live prototype:** [Open KabadiSetu](https://main.d364mryjpwg6jn.amplifyapp.com/)
+
+**Evidence:** [Architecture](docs/architecture.md) · [Evaluation](eval/INTERNET_PHOTOS.md) · [Costs](docs/cost.md) · [Problem log](docs/problem-log.md) · [Timing protocol](docs/timing-trials.md)
+
+**Honest limits:** no collector validation or verified pickups; no measured household impact. Mapping `.2` recognised 2/7 supported held-out items (5/10 overall, including expected-unknown examples). Mapping `.3` clarification is a **post-benchmark UX change, not yet evaluated**. Bedrock remains blocked. Physical-phone and household timing results are pending. Local changes are not automatically live; see the verification log.
+
+## Try it as a judge
+
+Use the shared demo credentials supplied privately by the author; they are never committed. The author’s copy is `.local/demo-household.json`. Hosting URL: https://main.d364mryjpwg6jn.amplifyapp.com (check the verification log for deployment status).
+
+1. Open a fresh browser session and sign in with the demo household. Choose Hindi or English.
+2. Select Newspaper manually, confirm it is clean and dry, and add it to the basket. Photo recognition may be unavailable; that is disclosed rather than simulated.
+3. Prepare a pickup request and review its message. Open the recipient test page without sending a WhatsApp message to a real person.
+4. On the Hindi collector page, accept the request, then report it collected. Return to the household page and refresh to see its history. This is a test report, not verified collection.
+5. Return to sorting: Newspaper appears under Your usual items. Select it without an AI call and answer the condition question again. Optionally save a collector number on this browser only, after reviewing the number yourself.
+
 ## What works today
 
 Manual catalogue selection, deterministic sorting guidance, baskets, pickup requests and recipient-link responses. Household ownership and Cedar policies restrict actions; DynamoDB transactions protect status changes and action receipts. English and Hindi are available for the main flow.
@@ -52,32 +68,19 @@ DynamoDB integration tests require the local container; pytest reports skips whe
 6. After deploying the manual app, use stack outputs in `frontend/.env.local` (see `.env.example`). Configure the host to return the app for `/r` and send `Cache-Control: no-store` and `Referrer-Policy: no-referrer` on the recipient page.
 7. Verify household sign-in, cross-household denial, link expiry and the full request flow live before connecting Bedrock.
 
-The model probe is intentionally opt-in, and its result proves only that the calling AWS identity can use that model. Bedrock runtime permissions and an application-level usage quota must be added and tested before public recognition is enabled.
+The model probe is intentionally opt-in, and its result proves only that the calling AWS identity can use that model. Provider-specific runtime permissions and quotas are implemented; Bedrock access and its live Lambda integration remain unverified.
 
 See [cost controls](docs/cost.md) and [retry decisions](docs/decisions/002-retries-and-sessions.md).
 
-## Authorship and event timeline
-
-Developed by Anish Kumawat with Codex for implementation and Claude for research/review and implementation fixes. AI assistance must also be disclosed in the submission writeup. Dependencies retain their upstream licenses. There is no claim that generated code is guaranteed unique or plagiarism-free; changes are reviewed and should be explainable by the author.
-
-The earliest recorded project files were created on October 8, 2026 around 11:40 IST. The exact official kickoff hour still needs confirmation against the organizers' announcement. Local commit timestamps alone do not resolve eligibility; preserve the original timeline and ask organizers if the times overlap.
 
 
-## Try it as a judge
 
-Use the shared demo credentials supplied privately by the author; they are never committed. The author’s copy is `.local/demo-household.json`. Hosting URL: https://main.d364mryjpwg6jn.amplifyapp.com (check the verification log for deployment status).
-
-1. Open a fresh browser session and sign in with the demo household. Choose Hindi or English.
-2. Select Newspaper manually, confirm it is clean and dry, and add it to the basket. Photo recognition may be unavailable; that is disclosed rather than simulated.
-3. Prepare a pickup request and review its message. Open the recipient test page without sending a WhatsApp message to a real person.
-4. On the Hindi collector page, accept the request, then report it collected. Return to the household page and refresh to see its history. This is a test report, not verified collection.
-5. Return to sorting: Newspaper appears under Your usual items. Select it without an AI call and answer the condition question again. Optionally save a collector number on this browser only, after reviewing the number yourself.
 
 ## Recognition limits and evaluation
 
 Recognition is disabled by default and has no Bedrock permission while disabled. Set `RecognitionProvider=rekognition` for one DetectLabels call with a conservative code mapping, or `bedrock` for one direct Nova Lite call after its authorization is resolved. The household must confirm the suggested item before condition checks. Invalid output becomes unknown; no model tools can change a basket or pickup. The daily UTC limits are five inference reservations per household and fifty for the whole app. Upload grants are also limited. Errors do not automatically refund a possibly billed call. A new scan of the same photo is not yet deduplicated by hash across scans.
 
-See `eval/README.md` for the 30–50-photo plan. A 30-image public-photo benchmark is complete: 20 development and 10 held out. Held-out results were 5/10 correct including expected-unknown negatives, with only 2/7 supported items recognised. It does not establish Jaipur-user performance; no recognition cost savings is claimed. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
+See `eval/README.md` for the 30–50-photo plan. A 30-image public-photo benchmark is complete: 20 development and 10 held out. Mapping `.2` held-out results were 5/10 correct including expected-unknown negatives, with only 2/7 supported items recognised. It does not establish Jaipur-user performance; no recognition cost savings is claimed. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
 
 GitHub Actions checks local DynamoDB integration, IAM policies, Python tests, frontend tests and the frontend build. Its workflow is committed locally but has not run on GitHub while pushes are paused.
 
