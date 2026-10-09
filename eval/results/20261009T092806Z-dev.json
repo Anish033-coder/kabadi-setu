@@ -1,0 +1,1178 @@
+{
+  "provider": "rekognition",
+  "model": "DetectLabels:GENERAL_LABELS",
+  "region": "ap-south-1",
+  "split": "dev",
+  "results": [
+    {
+      "photo": "photos/trashnet/cardboard43.jpg",
+      "expected": "cardboard",
+      "size": 256,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Cardboard",
+          "confidence": 99.69168853759766
+        },
+        {
+          "name": "Box",
+          "confidence": 99.38134765625
+        },
+        {
+          "name": "Carton",
+          "confidence": 99.23858642578125
+        },
+        {
+          "name": "Package",
+          "confidence": 93.96564483642578
+        },
+        {
+          "name": "Package Delivery",
+          "confidence": 93.96564483642578
+        },
+        {
+          "name": "Person",
+          "confidence": 93.96564483642578
+        }
+      ],
+      "latency_ms": 543
+    },
+    {
+      "photo": "photos/trashnet/cardboard43.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.94453430175781
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 97.45340728759766
+        },
+        {
+          "name": "Carton",
+          "confidence": 97.45340728759766
+        }
+      ],
+      "latency_ms": 169
+    },
+    {
+      "photo": "photos/trashnet/cardboard97.jpg",
+      "expected": "cardboard",
+      "size": 256,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 97.62942504882812
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 95.43880462646484
+        },
+        {
+          "name": "Carton",
+          "confidence": 95.04884338378906
+        },
+        {
+          "name": "Home Decor",
+          "confidence": 91.26937866210938
+        },
+        {
+          "name": "Linen",
+          "confidence": 91.26937866210938
+        }
+      ],
+      "latency_ms": 148
+    },
+    {
+      "photo": "photos/trashnet/cardboard97.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.95555114746094
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 95.80551147460938
+        },
+        {
+          "name": "Carton",
+          "confidence": 95.80551147460938
+        }
+      ],
+      "latency_ms": 176
+    },
+    {
+      "photo": "photos/trashnet/cardboard191.jpg",
+      "expected": "cardboard",
+      "size": 256,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.89055633544922
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 97.63465118408203
+        },
+        {
+          "name": "Carton",
+          "confidence": 97.63465118408203
+        }
+      ],
+      "latency_ms": 229
+    },
+    {
+      "photo": "photos/trashnet/cardboard191.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.96310424804688
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 94.3913345336914
+        },
+        {
+          "name": "Carton",
+          "confidence": 94.3913345336914
+        }
+      ],
+      "latency_ms": 169
+    },
+    {
+      "photo": "photos/trashnet/cardboard311.jpg",
+      "expected": "cardboard",
+      "size": 256,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.79317474365234
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 98.568359375
+        },
+        {
+          "name": "Carton",
+          "confidence": 98.568359375
+        },
+        {
+          "name": "Package",
+          "confidence": 98.0479965209961
+        },
+        {
+          "name": "Package Delivery",
+          "confidence": 98.0479965209961
+        },
+        {
+          "name": "Person",
+          "confidence": 98.0479965209961
+        }
+      ],
+      "latency_ms": 166
+    },
+    {
+      "photo": "photos/trashnet/cardboard311.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 99.96416473388672
+        },
+        {
+          "name": "Cardboard",
+          "confidence": 97.11274719238281
+        },
+        {
+          "name": "Carton",
+          "confidence": 97.11274719238281
+        },
+        {
+          "name": "Package",
+          "confidence": 92.90174865722656
+        },
+        {
+          "name": "Package Delivery",
+          "confidence": 92.90174865722656
+        },
+        {
+          "name": "Person",
+          "confidence": 92.90174865722656
+        }
+      ],
+      "latency_ms": 194
+    },
+    {
+      "photo": "photos/trashnet/glass137.jpg",
+      "expected": "glass-bottle",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Bottle",
+          "confidence": 99.98930358886719
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.31314849853516
+        },
+        {
+          "name": "Pop Bottle",
+          "confidence": 99.31314849853516
+        },
+        {
+          "name": "Soda",
+          "confidence": 99.31314849853516
+        },
+        {
+          "name": "Jar",
+          "confidence": 92.21985626220703
+        }
+      ],
+      "latency_ms": 162
+    },
+    {
+      "photo": "photos/trashnet/glass137.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Bottle",
+          "confidence": 99.887451171875
+        },
+        {
+          "name": "Jar",
+          "confidence": 98.61762237548828
+        },
+        {
+          "name": "Smoke Pipe",
+          "confidence": 95.00221252441406
+        },
+        {
+          "name": "Beverage",
+          "confidence": 94.86088562011719
+        },
+        {
+          "name": "Pop Bottle",
+          "confidence": 94.86088562011719
+        },
+        {
+          "name": "Soda",
+          "confidence": 94.86088562011719
+        }
+      ],
+      "latency_ms": 182
+    },
+    {
+      "photo": "photos/trashnet/glass188.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Glass",
+          "confidence": 100.0
+        },
+        {
+          "name": "Alcohol",
+          "confidence": 99.65277099609375
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.65277099609375
+        },
+        {
+          "name": "Liquor",
+          "confidence": 99.65277099609375
+        },
+        {
+          "name": "Wine",
+          "confidence": 99.65277099609375
+        },
+        {
+          "name": "Wine Glass",
+          "confidence": 99.65277099609375
+        },
+        {
+          "name": "Goblet",
+          "confidence": 96.76712799072266
+        }
+      ],
+      "latency_ms": 214
+    },
+    {
+      "photo": "photos/trashnet/glass188.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Glass",
+          "confidence": 100.0
+        },
+        {
+          "name": "Alcohol",
+          "confidence": 98.32148742675781
+        },
+        {
+          "name": "Beverage",
+          "confidence": 98.32148742675781
+        },
+        {
+          "name": "Liquor",
+          "confidence": 98.32148742675781
+        },
+        {
+          "name": "Wine",
+          "confidence": 98.32148742675781
+        },
+        {
+          "name": "Wine Glass",
+          "confidence": 98.32148742675781
+        }
+      ],
+      "latency_ms": 164
+    },
+    {
+      "photo": "photos/trashnet/glass405.jpg",
+      "expected": "glass-bottle",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Alcohol",
+          "confidence": 99.99971008300781
+        },
+        {
+          "name": "Beer",
+          "confidence": 99.99971008300781
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.99971008300781
+        },
+        {
+          "name": "Beer Bottle",
+          "confidence": 99.99059295654297
+        },
+        {
+          "name": "Bottle",
+          "confidence": 99.99059295654297
+        },
+        {
+          "name": "Liquor",
+          "confidence": 99.99059295654297
+        }
+      ],
+      "latency_ms": 149
+    },
+    {
+      "photo": "photos/trashnet/glass405.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Alcohol",
+          "confidence": 99.99982452392578
+        },
+        {
+          "name": "Beer",
+          "confidence": 99.99982452392578
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.99982452392578
+        },
+        {
+          "name": "Beer Bottle",
+          "confidence": 99.9917984008789
+        },
+        {
+          "name": "Bottle",
+          "confidence": 99.9917984008789
+        },
+        {
+          "name": "Liquor",
+          "confidence": 99.9917984008789
+        }
+      ],
+      "latency_ms": 163
+    },
+    {
+      "photo": "photos/trashnet/glass311.jpg",
+      "expected": "glass-bottle",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Alcohol",
+          "confidence": 99.99961853027344
+        },
+        {
+          "name": "Beer",
+          "confidence": 99.99961853027344
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.99961853027344
+        },
+        {
+          "name": "Beer Bottle",
+          "confidence": 99.99302673339844
+        },
+        {
+          "name": "Bottle",
+          "confidence": 99.99302673339844
+        },
+        {
+          "name": "Liquor",
+          "confidence": 99.99302673339844
+        }
+      ],
+      "latency_ms": 151
+    },
+    {
+      "photo": "photos/trashnet/glass311.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Alcohol",
+          "confidence": 99.99952697753906
+        },
+        {
+          "name": "Beer",
+          "confidence": 99.99952697753906
+        },
+        {
+          "name": "Beverage",
+          "confidence": 99.99952697753906
+        },
+        {
+          "name": "Bottle",
+          "confidence": 99.99476623535156
+        },
+        {
+          "name": "Beer Bottle",
+          "confidence": 99.99015045166016
+        },
+        {
+          "name": "Liquor",
+          "confidence": 99.99015045166016
+        }
+      ],
+      "latency_ms": 156
+    },
+    {
+      "photo": "photos/trashnet/metal95.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Tin",
+          "confidence": 94.55570220947266
+        }
+      ],
+      "latency_ms": 141
+    },
+    {
+      "photo": "photos/trashnet/metal95.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Tin",
+          "confidence": 98.16386413574219
+        },
+        {
+          "name": "Can",
+          "confidence": 90.30316162109375
+        }
+      ],
+      "latency_ms": 174
+    },
+    {
+      "photo": "photos/trashnet/metal205.jpg",
+      "expected": "aluminium-can",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Beverage",
+          "confidence": 95.73568725585938
+        },
+        {
+          "name": "Coke",
+          "confidence": 95.73568725585938
+        },
+        {
+          "name": "Soda",
+          "confidence": 95.73568725585938
+        }
+      ],
+      "latency_ms": 160
+    },
+    {
+      "photo": "photos/trashnet/metal205.jpg",
+      "expected": "aluminium-can",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Tin",
+          "confidence": 98.7834701538086
+        },
+        {
+          "name": "Can",
+          "confidence": 94.97679138183594
+        }
+      ],
+      "latency_ms": 354
+    },
+    {
+      "photo": "photos/trashnet/metal142.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.9999771118164
+        },
+        {
+          "name": "Can",
+          "confidence": 99.9784164428711
+        },
+        {
+          "name": "Canned Goods",
+          "confidence": 99.9784164428711
+        },
+        {
+          "name": "Food",
+          "confidence": 99.9784164428711
+        },
+        {
+          "name": "Tin",
+          "confidence": 99.9784164428711
+        }
+      ],
+      "latency_ms": 302
+    },
+    {
+      "photo": "photos/trashnet/metal142.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Tin",
+          "confidence": 99.97283935546875
+        },
+        {
+          "name": "Aluminium",
+          "confidence": 99.97106170654297
+        },
+        {
+          "name": "Can",
+          "confidence": 99.6933364868164
+        },
+        {
+          "name": "Canned Goods",
+          "confidence": 99.58650207519531
+        },
+        {
+          "name": "Food",
+          "confidence": 99.58650207519531
+        }
+      ],
+      "latency_ms": 155
+    },
+    {
+      "photo": "photos/trashnet/metal311.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.99828338623047
+        },
+        {
+          "name": "Tin",
+          "confidence": 99.90498352050781
+        },
+        {
+          "name": "Can",
+          "confidence": 99.77532196044922
+        },
+        {
+          "name": "Canned Goods",
+          "confidence": 99.77532196044922
+        },
+        {
+          "name": "Food",
+          "confidence": 99.77532196044922
+        },
+        {
+          "name": "Dynamite",
+          "confidence": 91.81468200683594
+        },
+        {
+          "name": "Weapon",
+          "confidence": 91.81468200683594
+        }
+      ],
+      "latency_ms": 155
+    },
+    {
+      "photo": "photos/trashnet/metal311.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Tin",
+          "confidence": 99.97754669189453
+        },
+        {
+          "name": "Can",
+          "confidence": 99.78031158447266
+        },
+        {
+          "name": "Dynamite",
+          "confidence": 93.3738784790039
+        },
+        {
+          "name": "Weapon",
+          "confidence": 93.3738784790039
+        }
+      ],
+      "latency_ms": 173
+    },
+    {
+      "photo": "photos/trashnet/plastic279.jpg",
+      "expected": "rigid-plastic",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.60649871826172
+        }
+      ],
+      "latency_ms": 144
+    },
+    {
+      "photo": "photos/trashnet/plastic279.jpg",
+      "expected": "rigid-plastic",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.95068359375
+        },
+        {
+          "name": "Ice",
+          "confidence": 95.03343963623047
+        }
+      ],
+      "latency_ms": 368
+    },
+    {
+      "photo": "photos/trashnet/plastic316.jpg",
+      "expected": "rigid-plastic",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [],
+      "latency_ms": 142
+    },
+    {
+      "photo": "photos/trashnet/plastic316.jpg",
+      "expected": "rigid-plastic",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Ice",
+          "confidence": 99.85106658935547
+        },
+        {
+          "name": "Jar",
+          "confidence": 97.74700164794922
+        }
+      ],
+      "latency_ms": 226
+    },
+    {
+      "photo": "photos/trashnet/plastic50.jpg",
+      "expected": "rigid-plastic",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Bottle",
+          "confidence": 90.78913879394531
+        },
+        {
+          "name": "Shaker",
+          "confidence": 90.78913879394531
+        }
+      ],
+      "latency_ms": 151
+    },
+    {
+      "photo": "photos/trashnet/plastic50.jpg",
+      "expected": "rigid-plastic",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Jar",
+          "confidence": 95.05953979492188
+        },
+        {
+          "name": "Plastic",
+          "confidence": 90.84027099609375
+        }
+      ],
+      "latency_ms": 161
+    },
+    {
+      "photo": "photos/trashnet/plastic76.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Food",
+          "confidence": 97.82955169677734
+        },
+        {
+          "name": "Ketchup",
+          "confidence": 97.82955169677734
+        }
+      ],
+      "latency_ms": 285
+    },
+    {
+      "photo": "photos/trashnet/plastic76.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Food",
+          "confidence": 98.51457977294922
+        },
+        {
+          "name": "Ketchup",
+          "confidence": 98.51457977294922
+        },
+        {
+          "name": "Pottery",
+          "confidence": 95.77005004882812
+        },
+        {
+          "name": "Cup",
+          "confidence": 95.54399108886719
+        },
+        {
+          "name": "Art",
+          "confidence": 94.6604232788086
+        },
+        {
+          "name": "Porcelain",
+          "confidence": 94.6604232788086
+        }
+      ],
+      "latency_ms": 180
+    },
+    {
+      "photo": "photos/trashnet/trash98.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Plastic",
+          "confidence": 99.99946594238281
+        },
+        {
+          "name": "Bag",
+          "confidence": 99.99662780761719
+        },
+        {
+          "name": "Plastic Bag",
+          "confidence": 98.97034454345703
+        }
+      ],
+      "latency_ms": 149
+    },
+    {
+      "photo": "photos/trashnet/trash98.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Bag",
+          "confidence": 97.22151947021484
+        }
+      ],
+      "latency_ms": 164
+    },
+    {
+      "photo": "photos/trashnet/trash83.jpg",
+      "expected": "wrapper",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [],
+      "latency_ms": 155
+    },
+    {
+      "photo": "photos/trashnet/trash83.jpg",
+      "expected": "wrapper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 92.41659545898438
+        },
+        {
+          "name": "Food",
+          "confidence": 91.84090423583984
+        },
+        {
+          "name": "Sweets",
+          "confidence": 91.84090423583984
+        }
+      ],
+      "latency_ms": 161
+    },
+    {
+      "photo": "photos/trashnet/trash69.jpg",
+      "expected": "unknown",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Bowl",
+          "confidence": 99.31864929199219
+        },
+        {
+          "name": "Cup",
+          "confidence": 98.2878189086914
+        }
+      ],
+      "latency_ms": 156
+    },
+    {
+      "photo": "photos/trashnet/trash69.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Cup",
+          "confidence": 99.85466766357422
+        },
+        {
+          "name": "Pottery",
+          "confidence": 99.13175201416016
+        }
+      ],
+      "latency_ms": 159
+    },
+    {
+      "photo": "photos/trashnet/trash21.jpg",
+      "expected": "wrapper",
+      "size": 256,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.9993667602539
+        }
+      ],
+      "latency_ms": 142
+    },
+    {
+      "photo": "photos/trashnet/trash21.jpg",
+      "expected": "wrapper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.1"
+      },
+      "status": "complete",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.99971008300781
+        },
+        {
+          "name": "Foil",
+          "confidence": 93.62643432617188
+        }
+      ],
+      "latency_ms": 353
+    }
+  ]
+}

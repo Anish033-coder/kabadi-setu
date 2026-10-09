@@ -13,15 +13,16 @@ from botocore.config import Config
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from backend.recognition import infer, parse_suggestion, MODEL
+from backend.recognizers import make_recognizer
 from backend.images import validate_photo
 from scripts.aws_identity import require_non_root
 
 
 def main():
     parser=argparse.ArgumentParser()
+    parser.add_argument('--provider', choices=['rekognition','bedrock'], default='rekognition')
     parser.add_argument('--split',choices=['dev','heldout'],required=True)
-    parser.add_argument('--sizes',type=int,nargs='+',choices=[768,1024],required=True)
+    parser.add_argument('--sizes',type=int,nargs='+',choices=[256,512,768,1024],required=True)
     parser.add_argument('--allow-paid-calls',action='store_true')
     args=parser.parse_args()
     if not args.allow_paid_calls: parser.error('Explicit --allow-paid-calls is required.')
@@ -41,7 +42,7 @@ def main():
     selected=[r for r in rows if r['split']==args.split]
     if not selected: parser.error('No photos in this split.')
     session=require_non_root()
-    client=session.client('bedrock-runtime',region_name='ap-south-1',config=Config(connect_timeout=3,read_timeout=25,retries={'total_max_attempts':1}))
+    recognizer=make_recognizer(args.provider, session)
     results=[]
     stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     output=ROOT/'eval/results'/f'{stamp}-{args.split}.json'
@@ -56,12 +57,14 @@ def main():
             started=time.perf_counter()
             result={'photo':row['path'],'expected':row['label'],'size':size,'predicted':'unknown','usage':None}
             try:
-                response=infer(client,raw,catalogue)
-                result.update(predicted=parse_suggestion(response,catalogue),usage=response.get('usage'),status='complete')
+                suggestion=recognizer.recognize(raw,catalogue)
+                result.update(predicted=suggestion.item_id,usage=suggestion.usage,status='complete')
+                if args.split == 'dev' and args.provider == 'rekognition':
+                    result['labels'] = suggestion.labels
             except Exception as error: result.update(status='failed',error_type=type(error).__name__)
             result['latency_ms']=round((time.perf_counter()-started)*1000)
             results.append(result)
-            output.write_text(json.dumps({'model':MODEL,'region':'ap-south-1','split':args.split,'results':results},indent=2)+'\n')
+            output.write_text(json.dumps({'provider':args.provider,'model':recognizer.model_id,'region':'ap-south-1','split':args.split,'results':results},indent=2)+'\n')
             if result['status']=='failed':
                 print('Stopped after a failed call; partial result saved. Investigate before spending more.')
                 return

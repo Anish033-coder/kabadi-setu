@@ -1,0 +1,287 @@
+{
+  "source": "20261009T092806Z-dev.json",
+  "mapping_version": "2026-10-09.2",
+  "new_api_calls": 0,
+  "results": [
+    {
+      "photo": "photos/trashnet/cardboard43.jpg",
+      "size": 256,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard43.jpg",
+      "size": 512,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard97.jpg",
+      "size": 256,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard97.jpg",
+      "size": 512,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard191.jpg",
+      "size": 256,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard191.jpg",
+      "size": 512,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard311.jpg",
+      "size": 256,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/cardboard311.jpg",
+      "size": 512,
+      "expected": "cardboard",
+      "baseline": "cardboard",
+      "predicted": "cardboard"
+    },
+    {
+      "photo": "photos/trashnet/glass137.jpg",
+      "size": 256,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/glass137.jpg",
+      "size": 512,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/glass188.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/glass188.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/glass405.jpg",
+      "size": 256,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "glass-bottle"
+    },
+    {
+      "photo": "photos/trashnet/glass405.jpg",
+      "size": 512,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "glass-bottle"
+    },
+    {
+      "photo": "photos/trashnet/glass311.jpg",
+      "size": 256,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "glass-bottle"
+    },
+    {
+      "photo": "photos/trashnet/glass311.jpg",
+      "size": 512,
+      "expected": "glass-bottle",
+      "baseline": "unknown",
+      "predicted": "glass-bottle"
+    },
+    {
+      "photo": "photos/trashnet/metal95.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal95.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal205.jpg",
+      "size": 256,
+      "expected": "aluminium-can",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal205.jpg",
+      "size": 512,
+      "expected": "aluminium-can",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal142.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal142.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal311.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/metal311.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic279.jpg",
+      "size": 256,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic279.jpg",
+      "size": 512,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic316.jpg",
+      "size": 256,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic316.jpg",
+      "size": 512,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic50.jpg",
+      "size": 256,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic50.jpg",
+      "size": 512,
+      "expected": "rigid-plastic",
+      "baseline": "unknown",
+      "predicted": "rigid-plastic"
+    },
+    {
+      "photo": "photos/trashnet/plastic76.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/plastic76.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash98.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash98.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash83.jpg",
+      "size": 256,
+      "expected": "wrapper",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash83.jpg",
+      "size": 512,
+      "expected": "wrapper",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash69.jpg",
+      "size": 256,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash69.jpg",
+      "size": 512,
+      "expected": "unknown",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash21.jpg",
+      "size": 256,
+      "expected": "wrapper",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    },
+    {
+      "photo": "photos/trashnet/trash21.jpg",
+      "size": 512,
+      "expected": "wrapper",
+      "baseline": "unknown",
+      "predicted": "unknown"
+    }
+  ]
+}
