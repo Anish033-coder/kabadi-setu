@@ -10,7 +10,7 @@ Manual catalogue selection, deterministic sorting guidance, baskets, pickup requ
 
 No collector has validated rates or minimum quantities, so the app prepares a quote request. Sending a WhatsApp link does not prove delivery. A link response is not identity verification or proof of physical collection/recycling.
 
-The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. Amplify hosting is being verified. Recognition is implemented behind a disabled flag because Bedrock reports this account is not authorized. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; they reject requests while recognition is disabled. No model savings or real-world impact has been measured.
+The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. The frontend is hosted on Amplify; its recipient route and privacy headers have been verified over HTTP. A hosted-browser demo also passed sign-in, manual sorting, basket saving, request creation and the Hindi recipient acceptance/collection-report flow. Recognition is implemented behind a disabled flag because Bedrock reports this account is not authorized. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; they reject requests while recognition is disabled. No model savings or real-world impact has been measured.
 
 ## Run locally
 
@@ -18,7 +18,7 @@ Use Python 3.14, Node 22.13+ and Docker Desktop. From the project root:
 
 ```sh
 python3.14 -m venv .venv
-.venv/bin/python -m pip install -r backend/requirements.txt pytest
+.venv/bin/python -m pip install -r backend/requirements.txt -r requirements-dev.txt
 make local-db
 TABLE_NAME=kabadi-setu-local DYNAMODB_ENDPOINT=http://127.0.0.1:8000 .venv/bin/python -m backend.local
 ```

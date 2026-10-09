@@ -25,3 +25,8 @@ Use each incident as a demo explanation: show the user-visible problem, the smal
 The first Amplify uploader lost its signed-upload state after a TLS failure. Re-running created another pending job, which prevented a third deployment. Both unstarted jobs were explicitly stopped. The uploader now saves pending upload state locally with mode 0600 and uses bounded retries of the same object upload; nothing sensitive is committed.
 
 A fresh clone installed and passed the full tests/build. The browser tool reported ERR_INTERNET_DISCONNECTED while some shell-based AWS operations still completed, so browser availability is tracked separately from AWS stack status.
+
+
+## 2026-10-09 — browser and live transport verification
+
+The live smoke test now uses curl with bounded retries after Python HTTPS connections repeatedly timed out. Credentials are supplied via stdin and response bodies are omitted from failure messages. The final API smoke passed and removed temporary users/records. A fresh hosted browser tab also completed the manual household-to-recipient flow in Hindi; the earlier offline browser error no longer reproduced. Bedrock authorization is still unresolved, so recognition stays disabled.

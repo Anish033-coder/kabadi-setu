@@ -46,3 +46,22 @@ Public frontend hosting, physical-phone browser testing and image recognition re
 - Amplify upload attempts hit TLS errors and left pending jobs; those pending jobs were stopped before a controlled retry. The in-app browser reported ERR_INTERNET_DISCONNECTED, so no successful browser walkthrough or physical-phone/mobile-data test is claimed.
 - npm audit reports low-severity findings for esbuild and Vite, with no fix available in its report. No automatic dependency upgrade was attempted.
 - Real-photo accuracy, inference cost, mobile-data behavior and final submission remain unverified. No submission tag yet.
+
+
+## Hosting confirmed — 2026-10-08T23:04:29+05:30
+
+Amplify reports SUCCEED for the frontend deployment. `https://main.d364mryjpwg6jn.amplifyapp.com/r` returns HTTP 200, text/html, Cache-Control: no-store and Referrer-Policy: no-referrer. The API health endpoint returns mode=aws, recognition=unavailable. The fresh-browser walkthrough remains unverified: the in-app browser displayed an offline error page and its error-page data URL was blocked by the browser tool. This is separate from the successful HTTP checks.
+
+The first post-update smoke run stopped on a TLS timeout at /health before creating users. A subsequent run is recorded below when complete. No model calls beyond the two failed synthetic probes were attempted.
+
+
+## Post-deployment smoke completed — recorded 2026-10-09
+
+The final live smoke run passed sign-in, unauthenticated denial, cross-household denial, manual sorting, basket save, idempotent request creation, acceptance and collection reporting. Temporary users and known test records were removed; no email was sent. The HTTP test transport now uses curl with bounded retries and credentials provided over stdin after repeated Python TLS timeouts. These remain synthetic test scenarios, not real collections.
+
+
+## Hosted browser walkthrough — 2026-10-09T08:38:04+05:30
+
+A fresh in-app browser tab successfully signed in with the private demo household. Selected Newspapers, confirmed clean/dry condition, saved one item, and prepared a request. The usual-items shortcut appeared after adding the item. Opened the recipient test link: Hindi was the default, no collector login was requested, and Accept followed by Report collection produced the expected status/history. No WhatsApp message was sent and no collector was contacted. This demo record is synthetic; it is not evidence of physical collection.
+
+Recognition displayed its unavailable/manual-fallback message. Physical-phone mobile-data testing, real-photo evaluation, cost reconciliation and Bedrock authorization remain outstanding. No submission tag or GitHub push was made.
