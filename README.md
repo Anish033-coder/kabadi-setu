@@ -87,3 +87,9 @@ GitHub Actions checks local DynamoDB integration, IAM policies, Python tests, fr
 ## Recognition fallback status — October 9
 
 The Rekognition and Bedrock adapters share the same scan ownership, validation, quota and saved-result flow. The template defaults to Rekognition with recognition **disabled**. Enable only after a successful account probe and reviewed deployment. The IAM test permits one documented global-resource exception: `rekognition:DetectLabels`, restricted to Mumbai. See [decision 005](docs/decisions/005-recognition-providers.md). Rekognition is deployed and the synthetic hosted upload/analyze/repeat check passed. This proves connectivity and saved-result reuse, not accuracy on real items.
+
+## Authorship and event timeline
+
+Developed by Anish Kumawat for WeMakeDevs × AWS Environmental Hacks (Waste and Energy track). AI assistance, as the event rules require us to disclose: **Codex** wrote most of the implementation; **Claude** did research, code review and review fixes, and took over the remaining work from October 9 after Codex's usage limit was reached. Each commit message says who wrote the change. Dependencies keep their upstream licences; the TrashNet evaluation photos are MIT-licensed and credited in `eval/`.
+
+The official schedule lists kickoff as Thursday, October 8, 2026, without a specific hour. The earliest project files were created on October 8 at about 11:40 IST, and the Git history starts the same day. Nothing was built before the event.
