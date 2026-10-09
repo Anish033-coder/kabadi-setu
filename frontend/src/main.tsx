@@ -6,6 +6,8 @@ import { createApi, actionIds } from "./api.js";
 import type { Item, Row, RequestRecord, Route } from "./types";
 import { RequestView } from "./components/RequestView";
 import { PhotoScan } from "./components/PhotoScan";
+import { TrialPanel } from "./components/TrialPanel";
+import { createTrial } from "./trials.js";
 const env = (import.meta as any).env;
 const endpoint = env.VITE_API_URL || "";
 const client = createApi({
@@ -100,6 +102,12 @@ function App() {
       return [];
     }
   });
+  const trialEnabled = new URLSearchParams(location.search).get("trial") === "1";
+  const trial = useRef(createTrial());
+  const [, refreshTrial] = useState(0);
+  const [trialRun, setTrialRun] = useState(0);
+  const trialState = trial.current.snapshot();
+  function trialChanged() { refreshTrial((n) => n + 1); }
   const [recognitionEnabled, setRecognitionEnabled] = useState(false);
   const [recognitionProvider, setRecognitionProvider] = useState("");
   const [householdKey, setHouseholdKey] = useState(endpoint ? "" : "local");
@@ -229,13 +237,15 @@ function App() {
       }
     });
   }
-  function select(item: Item) {
+  function select(item: Item, source = "manual") {
+    trial.current.select(item.id, source);
     setChosen(item);
     setCondition("");
     setRoute(null);
     setError("");
   }
   async function decide(value: string) {
+    trial.current.condition(value);
     setCondition(value);
     if (chosen)
       await run(async () =>
@@ -427,7 +437,16 @@ function App() {
           ))}
         </nav>
       )}
-      <main>
+      <main onClickCapture={() => { if (trialEnabled) trial.current.tap(); }}>
+        {trialEnabled && signedIn && !recipient && <TrialPanel
+          active={trialState.active} results={trialState.results} hasRoute={!!route}
+          onStart={(type, method) => {
+            trial.current.start(type, method); setChosen(null); setRoute(null); setCondition("");
+            setTab("sort"); setTrialRun((n) => n + 1); trialChanged();
+          }}
+          onFinish={() => { trial.current.finish(!!route); trialChanged(); }}
+          onAbort={() => { trial.current.abort(); trialChanged(); }}
+        />}
         <div role="alert" className={error ? "alert error" : "hidden"}>
           {error}
         </div>
@@ -773,6 +792,7 @@ function App() {
                   </section>
                 )}
                 <PhotoScan
+                  key={trialRun}
                   enabled={recognitionEnabled}
                   provider={recognitionProvider}
                   itemName={(id) => {
@@ -781,10 +801,13 @@ function App() {
                   }}
                   t={t}
                   api={api}
+                  onPhotoStart={() => trial.current.photo()}
+                  onQuestion={() => trial.current.question()}
+                  onCorrection={() => trial.current.correction()}
                   onSuggestion={(id) => {
                     const item = items.find((i) => i.id === id);
                     if (item) {
-                      select(item);
+                      select(item, "photo");
                       setNotice(
                         t(
                           "Item chosen. Now check its condition.",

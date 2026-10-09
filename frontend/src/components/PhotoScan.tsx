@@ -8,8 +8,11 @@ type Props = {
   t: (en: string, hi: string) => string;
   api: (path: string, body?: unknown, key?: string) => Promise<any>;
   onSuggestion: (id: string) => void;
+  onPhotoStart: () => void;
+  onQuestion: () => void;
+  onCorrection: () => void;
 };
-export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }: Props) {
+export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion, onPhotoStart, onQuestion, onCorrection }: Props) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -20,11 +23,13 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }:
     setClarification(null);
   }
   function manual() {
+    onCorrection();
     setSuggestion(null);
     setClarification(null);
     setMessage(t("Please search the catalogue or choose an item.", "कृपया सूची में सामान खोजें या चुनें।"));
   }
   async function scan(file: File) {
+    onPhotoStart();
     setBusy(true);
     setMessage("");
     setSuggestion(null);
@@ -49,6 +54,7 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion }:
         );
       const result = await api(`/scans/${grant.id}/analyze`, {});
       if (result.status === "complete" && result.clarification?.options?.length) {
+        onQuestion();
         setClarification(result.clarification);
       } else if (result.status !== "complete" || result.item_id === "unknown") {
         setMessage(
