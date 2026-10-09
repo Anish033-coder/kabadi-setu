@@ -3,6 +3,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timezone
+from botocore.exceptions import ClientError
 from .domain import Conflict, Problem, action_key
 from .images import MAX_BYTES, read_photo
 from .recognizers import Recognizer
@@ -114,7 +115,18 @@ class Recognition:
         if doc['upload_until'] <= now:
             raise Problem(410,'The scan expired. Please select the item manually.')
         # One read, one validated buffer. Re-uploading after this cannot replace inference input.
-        photo = read_photo(self.s3,self.bucket,doc['key'])
+        try:
+            photo = read_photo(self.s3,self.bucket,doc['key'])
+        except ClientError as error:
+            code = error.response.get('Error', {}).get('Code')
+            if code not in {'NoSuchKey', 'AccessDenied', '404'}:
+                raise
+            # Without ListBucket, S3 deliberately hides a missing key behind 403.
+            # Keep the code for diagnosing genuine permission failures as well.
+            self.logger.warning('photo_not_readable', extra={
+                'scan_id':scan_id, 's3_error_code':code,
+            })
+            raise Problem(409, 'The photo hasn’t finished uploading. Try again, or choose the item manually.') from error
         try:
             doc = self.store.reserve(doc,now,self.household_limit,self.global_limit)
         except Conflict:

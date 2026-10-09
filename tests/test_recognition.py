@@ -126,3 +126,32 @@ def test_rekognition_reuses_result_and_shared_daily_cap(service):
     assert fields['provider'] == 'rekognition'
     assert fields['image_requests'] == 1
     assert fields['input_tokens'] is None
+
+
+@pytest.mark.parametrize('code', ['NoSuchKey', 'AccessDenied', '404'])
+def test_unfinished_upload_does_not_reserve_or_infer(service, code):
+    from botocore.exceptions import ClientError
+    owner = str(uuid4())
+    scan = service.create(owner, str(uuid4()))
+    service.store.reserve = Mock(wraps=service.store.reserve)
+    service.s3.get_object.side_effect = ClientError({'Error':{'Code':code}}, 'GetObject')
+    with pytest.raises(Problem) as error: service.analyze(owner, scan['id'])
+    assert error.value.status == 409
+    assert 'finished uploading' in str(error.value)
+    assert service.store.get(scan['id'], owner)['state'] == 'waiting'
+    service.store.reserve.assert_not_called()
+    service.recognizer.client.converse.assert_not_called()
+    assert service.logger.warning.call_args.kwargs['extra']['s3_error_code'] == code
+    service.s3.get_object.side_effect = lambda **_: {'Body':BytesIO(jpeg())}
+    assert service.analyze(owner, scan['id'])['status'] == 'complete'
+    service.store.reserve.assert_called_once()
+
+
+def test_other_s3_errors_are_not_reported_as_upload_conflicts(service):
+    from botocore.exceptions import ClientError
+    owner = str(uuid4())
+    scan = service.create(owner, str(uuid4()))
+    service.s3.get_object.side_effect = ClientError({'Error':{'Code':'SlowDown'}}, 'GetObject')
+    with pytest.raises(ClientError): service.analyze(owner, scan['id'])
+    assert service.store.get(scan['id'], owner)['state'] == 'waiting'
+    service.recognizer.client.converse.assert_not_called()
