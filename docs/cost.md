@@ -1,6 +1,6 @@
 # Cost controls and evidence
 
-Status: manual backend deployed October 8 and Rekognition enabled October 9 in Mumbai; request counts and list-price inference estimates are recorded below; cloud bills and credits are not reconciled.
+Status: manual backend deployed October 8 and Rekognition enabled October 9 in Mumbai; request counts and list-price inference estimates are recorded below; account-wide billing has a partial reconciliation; current recognition and infrastructure charges have not yet posted/been reconciled.
 
 The manual path makes zero model calls. Rekognition is now enabled; Bedrock remains blocked. Do not turn this into a claim that the deployed app is free: API requests, Lambda, DynamoDB, logging, hosting and authentication can contribute costs.
 
@@ -41,7 +41,7 @@ As of October 8, both availability probes failed and returned no usage. Model ac
 
 The user reports $240 in promotional credits with $0 used; this is user-reported, not a reconciled bill. Continue reporting gross costs before credits and verifying credit applicability/expiry separately.
 
-DetectLabels GENERAL_LABELS is billed by images/requests rather than input/output tokens. Log `provider`, `image_requests`, `label_model_version`, `mapping_version` and duration. Count failed attempts conservatively pending billing reconciliation. Do not apply Nova token rates to this provider. Image resizing can save upload bytes/time but is not a per-image price discount. Use `eval/run.py --provider rekognition` for evaluation; freeze mapping and size before held-out tests. Mapping coverage/accuracy and actual cost remain unmeasured.
+DetectLabels GENERAL_LABELS is billed by images/requests rather than input/output tokens. Log `provider`, `image_requests`, `label_model_version`, `mapping_version` and duration. Count failed attempts conservatively pending billing reconciliation. Do not apply Nova token rates to this provider. Image resizing can save upload bytes/time but is not a per-image price discount. Use `eval/run.py --provider rekognition` for evaluation; freeze mapping and size before held-out tests. Mapping coverage/accuracy was subsequently measured below; the posted recognition bill remains pending.
 
 
 ## Measured public-photo run — October 9
@@ -53,3 +53,48 @@ Two synthetic application checks, one direct synthetic access probe and one brow
 The estimate is $0.125 per 100 recognition scans or $1.25 per 1,000, regardless of the tested 256/512 dimensions. Manual selections make no image request. A purely illustrative 200,000-recognition-scan month would be $250 inference-only at this tier, before credits/tax and other service costs; it is not a forecast of users or spending. Existing daily application quotas prevent that scenario in the current configuration.
 
 Development median provider latency was 155 ms at 256 and 171 ms at 512; held-out median was 173 ms at 512. These exclude upload, login and full user interaction. No statistical significance or per-image price saving is inferred from those small latency differences.
+
+
+## Partial billing reconciliation — October 9
+
+One Cost Explorer query, saved privately in `.local/cost-reconciliation.json`, covered October 8–9 and grouped by service and record type. October 8 showed $0.0003132446 in gross account-wide charges and -$0.0003132453 in credits: net approximately zero (rounding). October 9 returned no posted groups. Both days were marked estimated. These are account-wide figures, including unrelated services, not a project-attributed bill. They do **not** establish zero recognition cost or the remaining promotional-credit balance. The reported $240 balance remains user-reported.
+
+Keep three separate quantities: estimated pre-credit usage cost, credits actually posted by billing, and the resulting net bill. Do not subtract the advertised credit balance from estimated scan costs. Cost Explorer API queries themselves cost money; the one query adds $0.01 at list price and is not polled repeatedly. Billing refreshes can take over 24 hours.
+
+Sources: [Cost Explorer data timing](https://docs.aws.amazon.com/cost-management/latest/userguide/ce-what-is.html), [Cost Explorer pricing](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/pricing/).
+
+## Whole-scan calculation: measurement gate
+
+`eval/results/infrastructure-mumbai-prices.json` records current regional list-price dimensions for Lambda arm64, HTTP API and DynamoDB Standard. New repository instrumentation requests returned consumed capacity and logs read/write units without keys, table names or unique metric dimensions. It does not add a database request. Successful response usage is measured; unreported failed-attempt usage must remain a reconciliation gap, not zero.
+
+For an isolated test flow, sum its HTTP API requests, Lambda REPORT billed milliseconds at 512 MB, database read/write units and actual image requests. Then compute:
+
+- Rekognition: image requests × $0.00125.
+- HTTP API: metered requests × the recorded regional per-request rate.
+- Lambda: invocations × request rate + total billed milliseconds / 1000 × 0.5 GB × arm64 GB-second rate.
+- DynamoDB: returned read units × read-unit rate + returned write units × write-unit rate. Transaction capacity is already included in returned units; do not double it again.
+
+Multiply the measured flow cost by 100 for a per-100 equivalent. This is a list-price estimate, not 100 measured scans. Include failures and retries. Keep S3, logs, hosting, Cognito, bandwidth and account-wide fixed usage separate; the four-service subtotal is not the entire app bill. Use Lambda's billed duration, not recognition latency or browser elapsed time.
+
+**Pending:** the new capacity logs must be deployed and an isolated flow measured. The AWS session expired during preparation. No full-stack per-100 figure is presented as measured yet. The existing $0.125/100 and $250/200,000 figures remain explicitly inference-only estimates. The 200,000/month scenario is a projection, not current traffic, and exceeds today's application quotas. Manual selection has zero AI calls but still incurs its API/compute/storage activity.
+
+
+Current first-tier Mumbai rates in that snapshot (USD, before credits/tax):
+
+| Component | Unit rate |
+|---|---:|
+| HTTP API | $1.05 / million metered requests |
+| Lambda arm64 requests | $0.20 / million invocations |
+| Lambda arm64 duration | $0.0000133334 / GB-second |
+| DynamoDB Standard reads | $0.1425 / million read units |
+| DynamoDB Standard writes | $0.71 / million write units |
+
+Regional price sources are embedded in the saved snapshot: [Lambda](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/ap-south-1/index.json), [HTTP API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonApiGateway/current/ap-south-1/index.json), [DynamoDB](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonDynamoDB/current/ap-south-1/index.json). Use exact usage types (not Lambda web requests, managed instances or replicated DynamoDB writes).
+
+To reproduce the subtotal after collecting one isolated flow, write `.local/scan-counts.json` with numeric `scans`, `image_requests`, `api_requests`, `lambda_invocations`, `lambda_billed_ms`, `ddb_read_units`, and `ddb_write_units`. Use sums from the same measurement window; do not combine direct evaluation calls with unrelated app activity. Run:
+
+```sh
+.venv/bin/python scripts/estimate_scan_cost.py .local/scan-counts.json
+```
+
+The calculator makes no AWS calls and uses the committed price snapshot. It emits per-100 and 200,000-scan equivalents, both explicitly estimated subtotals. Its unit test uses invented arithmetic fixtures, which are not project measurements. Record source log references privately and publish only aggregate counts.

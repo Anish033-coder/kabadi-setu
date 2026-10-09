@@ -32,7 +32,7 @@ def service():
             options = {'region_name': os.getenv('AWS_REGION', 'ap-south-1')}
             if os.getenv('DYNAMODB_ENDPOINT'):
                 options.update(endpoint_url=os.environ['DYNAMODB_ENDPOINT'], aws_access_key_id='local', aws_secret_access_key='local')
-            repo = DynamoRepository(boto3.client('dynamodb', **options), os.environ['TABLE_NAME'])
+            repo = DynamoRepository(boto3.client('dynamodb', **options), os.environ['TABLE_NAME'], logger=logger)
         _service = Service(repo, CATALOGUE, secret)
     return _service
 

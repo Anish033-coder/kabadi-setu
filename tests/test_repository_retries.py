@@ -41,3 +41,13 @@ def test_other_failures_are_not_misreported_as_stale_actions(client, code):
     with pytest.raises(client.exceptions.TransactionCanceledException):
         DynamoRepository(client, 'test').write([])
     assert client.transact_write_items.call_count == 1
+
+
+def test_capacity_log_uses_returned_units_without_keys_or_table_names(client):
+    logger = Mock()
+    client.transact_write_items.return_value = {'ConsumedCapacity':[
+        {'TableName':'private-table', 'ReadCapacityUnits':0, 'WriteCapacityUnits':6}]}
+    DynamoRepository(client, 'private-table', logger).write([])
+    assert client.transact_write_items.call_args.kwargs['ReturnConsumedCapacity'] == 'TOTAL'
+    assert logger.info.call_args.kwargs['extra'] == {
+        'operation':'transaction', 'capacity_reported':True, 'read_units':0, 'write_units':6}

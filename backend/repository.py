@@ -46,8 +46,20 @@ def ensure_table(client, table):
 
 
 class DynamoRepository:
-    def __init__(self, client, table):
-        self.client, self.table = client, table
+    def __init__(self, client, table, logger=None):
+        self.client, self.table, self.logger = client, table, logger
+
+    def capacity(self, operation, response):
+        if self.logger is None:
+            return
+        entries = response.get("ConsumedCapacity", [])
+        if isinstance(entries, dict):
+            entries = [entries]
+        self.logger.info("database_capacity", extra={
+            "operation": operation, "capacity_reported": bool(entries),
+            "read_units": sum(entry.get("ReadCapacityUnits", entry.get("CapacityUnits", 0) if operation == "get" else 0) for entry in entries),
+            "write_units": sum(entry.get("WriteCapacityUnits", entry.get("CapacityUnits", 0) if operation == "put" else 0) for entry in entries),
+        })
 
     def item(self, key, value):
         result = {'pk': {'S': key}, 'document': {'S': json.dumps(value, ensure_ascii=False)}}
@@ -58,11 +70,13 @@ class DynamoRepository:
         return result
 
     def get(self, key):
-        response = self.client.get_item(TableName=self.table, Key={'pk': {'S': key}}, ConsistentRead=True)
+        response = self.client.get_item(TableName=self.table, Key={'pk': {'S': key}}, ConsistentRead=True, ReturnConsumedCapacity='TOTAL')
+        self.capacity('get', response)
         return json.loads(response['Item']['document']['S']) if 'Item' in response else None
 
     def put(self, key, value):
-        self.client.put_item(TableName=self.table, Item=self.item(key, value))
+        response = self.client.put_item(TableName=self.table, Item=self.item(key, value), ReturnConsumedCapacity='TOTAL')
+        self.capacity('put', response)
 
     def write(self, operations):
         # Reuse the exact transaction and token after temporary contention.
@@ -70,7 +84,8 @@ class DynamoRepository:
         token = str(uuid.uuid4())
         for attempt in range(4):
             try:
-                self.client.transact_write_items(TransactItems=operations, ClientRequestToken=token)
+                response = self.client.transact_write_items(TransactItems=operations, ClientRequestToken=token, ReturnConsumedCapacity='TOTAL')
+                self.capacity('transaction', response)
                 return
             except self.client.exceptions.TransactionCanceledException as error:
                 reasons = {reason.get('Code') for reason in error.response.get('CancellationReasons', [])}
