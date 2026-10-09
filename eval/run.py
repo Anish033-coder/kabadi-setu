@@ -21,15 +21,21 @@ from scripts.aws_identity import require_non_root
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--provider', choices=['rekognition','bedrock'], default='rekognition')
-    parser.add_argument('--split',choices=['dev','heldout'],required=True)
-    parser.add_argument('--sizes',type=int,nargs='+',choices=[256,512,768,1024],required=True)
+    parser.add_argument('--split',choices=['dev','heldout'],default='heldout')
+    parser.add_argument('--sizes',type=int,nargs='+',choices=[256,512,768,1024],default=[512])
+    parser.add_argument('--manifest', type=Path, default=ROOT/'eval/internet-sources.csv')
+    parser.add_argument('--access-confirmed', action='store_true')
+    parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--allow-paid-calls',action='store_true')
     args=parser.parse_args()
-    if not args.allow_paid_calls: parser.error('Explicit --allow-paid-calls is required.')
+    if not args.dry_run and not args.allow_paid_calls: parser.error('Explicit --allow-paid-calls is required.')
+    if args.provider == 'bedrock' and not args.dry_run and not args.access_confirmed:
+        parser.error('Bedrock remains blocked. Confirm account access before using --access-confirmed.')
+    if len(args.sizes) != len(set(args.sizes)): parser.error('Duplicate sizes would waste calls.')
     if args.split=='heldout' and len(args.sizes)!=1: parser.error('Freeze one size before the held-out run.')
     catalogue=json.loads((ROOT/'data/catalogue.json').read_text())
     allowed={i['id'] for i in catalogue['items']} | {'unknown'}
-    rows=list(csv.DictReader((ROOT/'eval/manifest.csv').open()))
+    rows=list(csv.DictReader(args.manifest.open()))
     if not 30<=len(rows)<=50: parser.error('Supply 30–50 labelled real photos.')
     seen=set()
     for row in rows:
@@ -37,10 +43,14 @@ def main():
         if not path.is_relative_to(ROOT/'eval/photos'): parser.error('Keep photos under eval/photos/.')
         digest=hashlib.sha256(path.read_bytes()).hexdigest()
         if digest in seen: parser.error('Duplicate image bytes found; split physical items consistently.')
+        if row.get('sha256') and digest != row['sha256']: parser.error('Photo hash changed after the manifest was frozen.')
         seen.add(digest)
         if row['label'] not in allowed or row['split'] not in ('dev','heldout'): parser.error('Invalid label or split.')
     selected=[r for r in rows if r['split']==args.split]
     if not selected: parser.error('No photos in this split.')
+    if args.dry_run:
+        print(f'{args.provider}: {len(selected)} {args.split} photos, sizes {args.sizes}, {len(selected)*len(args.sizes)} planned calls. No AWS requests made.')
+        return
     session=require_non_root()
     recognizer=make_recognizer(args.provider, session)
     results=[]
@@ -64,7 +74,7 @@ def main():
             except Exception as error: result.update(status='failed',error_type=type(error).__name__)
             result['latency_ms']=round((time.perf_counter()-started)*1000)
             results.append(result)
-            output.write_text(json.dumps({'provider':args.provider,'model':recognizer.model_id,'region':'ap-south-1','split':args.split,'results':results},indent=2)+'\n')
+            output.write_text(json.dumps({'manifest_sha256':hashlib.sha256(args.manifest.read_bytes()).hexdigest(),'provider':args.provider,'model':recognizer.model_id,'region':'ap-south-1','split':args.split,'results':results},indent=2)+'\n')
             if result['status']=='failed':
                 print('Stopped after a failed call; partial result saved. Investigate before spending more.')
                 return
