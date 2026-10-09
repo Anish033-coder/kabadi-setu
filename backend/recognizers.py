@@ -7,6 +7,8 @@ from typing import Protocol
 class Suggestion:
     item_id: str
     usage: dict = field(default_factory=dict)
+    # Development evaluation may inspect these; application logs never include them.
+    labels: tuple = ()
 
 
 class Recognizer(Protocol):
@@ -43,6 +45,8 @@ LABEL_TO_CATALOGUE = {
     'notebook': 'notebooks',
     'plastic bottle': 'pet-bottle',
     'glass bottle': 'glass-bottle',
+    # A tentative non-basket suggestion; the household must confirm the material.
+    'beer bottle': 'glass-bottle',
     'battery': 'battery',
     'mobile phone': 'electronics',
     'cell phone': 'electronics',
@@ -52,21 +56,26 @@ LABEL_TO_CATALOGUE = {
     'fluorescent lamp': 'bulb',
 }
 MIN_CONFIDENCE = 90
-MAPPING_VERSION = '2026-10-09.1'
+MAPPING_VERSION = '2026-10-09.2'
 
 
 def map_labels(labels, catalogue):
     allowed = {item['id'] for item in catalogue['items']}
     candidates = set()
+    confident_names = set()
     for label in labels:
         name, confidence = label.get('Name'), label.get('Confidence')
         if not isinstance(name, str) or not isinstance(confidence, (int, float)):
             continue
         if not MIN_CONFIDENCE <= confidence <= 100:
             continue
-        item_id = LABEL_TO_CATALOGUE.get(name.strip().lower())
+        name = name.strip().lower()
+        confident_names.add(name)
+        item_id = LABEL_TO_CATALOGUE.get(name)
         if item_id in allowed:
             candidates.add(item_id)
+    if {'jar', 'plastic'} <= confident_names and 'rigid-plastic' in allowed:
+        candidates.add('rigid-plastic')
     # Never choose the highest label when two different supported items appear.
     return next(iter(candidates)) if len(candidates) == 1 else 'unknown'
 
@@ -87,7 +96,8 @@ class RekognitionRecognizer:
             'image_requests': 1,
             'label_model_version': response.get('LabelModelVersion'),
             'mapping_version': MAPPING_VERSION,
-        })
+        }, labels=tuple({'name':label.get('Name'), 'confidence':label.get('Confidence')}
+                        for label in response.get('Labels', [])))
 
 
 def make_recognizer(provider, session):

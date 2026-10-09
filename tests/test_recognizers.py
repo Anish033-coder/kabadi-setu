@@ -15,6 +15,11 @@ def labels(*names, confidence=99):
     (['Newspaper', 'Paper'], 'newspaper'),
     (['Cardboard', 'Cardboard Box'], 'cardboard'),
     (['Laptop', 'Computer'], 'electronics'),
+    (['Beer Bottle', 'Bottle', 'Beer'], 'glass-bottle'),
+    (['Jar', 'Plastic'], 'rigid-plastic'),
+    (['Jar'], 'unknown'),
+    (['Can', 'Aluminium', 'Tin'], 'unknown'),
+    (['Beer Bottle', 'Plastic Bottle'], 'unknown'),
     (['Bottle', 'Plastic'], 'unknown'),
     (['Metal', 'Can'], 'unknown'),
     (['Newspaper', 'Battery'], 'unknown'),
@@ -41,6 +46,8 @@ def test_rekognition_uses_exact_bytes_and_only_general_labels():
     assert result.usage['image_requests'] == 1
     assert result.usage['label_model_version'] == '3.0'
     assert 'input_tokens' not in result.usage
+    assert result.labels == ({'name':'Newspaper', 'confidence':99},)
+    assert 'labels' not in result.usage
 
 
 def test_invalid_provider_fails_without_creating_client():
