@@ -20,6 +20,8 @@ def main():
         for path in (ROOT/'frontend/dist').rglob('*'):
             if path.is_file(): bundle.write(path,path.relative_to(ROOT/'frontend/dist'))
     amplify=session.client('amplify',region_name='ap-south-1')
+    # Keep the hosting policy versioned and reapply it on manual deployments.
+    amplify.update_app(appId=hosting['app_id'], customHeaders=(ROOT/'frontend/customHttp.yml').read_text())
     pending=ROOT/'.local/pending-hosting-upload.json'
     if pending.exists():
         deployment=json.loads(pending.read_text())
