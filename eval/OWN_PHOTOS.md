@@ -18,3 +18,27 @@
 **Result.** 3/8 correct overall, but only **1/6 supported items** recognised; 7/8 unresolved; no wrong item suggested. One photo triggered the material question, and it was a steel bottle offered only plastic or glass, so the household would need "None of these, choose manually". Median provider latency was about 360 ms.
 
 **What it means.** On real household photos, general labels rarely identify the item. The safety design held (no false suggestions), but the photo path mostly ends in manual choice. Manual selection and *Your usual items* are the main path; recognition is a helper. A model that can choose among the catalogue directly (Bedrock, once access is restored) would need the same test before any accuracy claim.
+
+## Follow-up: the same photos as a development set (mapping `.4`)
+
+After the result above was recorded, the eight photos were moved to the **dev** split and Rekognition's raw labels were fetched once at 512 px (8 calls; `eval/results/20261010T073418Z-own-photos-dev-labels.json`). The labels were mostly right *in kind* but never named the catalogue item:
+
+| Object | Labels at ≥90% confidence |
+|---|---|
+| Newspaper | Advertisement, Poster |
+| Used notebook | Book, Publication, Text, Document, Receipt |
+| Two plastic water bottles | Bottle, Plastic |
+| Steel water bottle | Aluminium, Bottle, Shaker |
+| Plastic pot with a pipe | Cookware, Pot |
+| Cardboard | Box (at 1024 px it was also labelled Cardboard) |
+| Rusty axe head and iron weight | Ammunition, Grenade, Weapon |
+
+Mapping **`2026-10-10.4`** turns label families (paper, box, bottle, plastic, can, container, metal, electronics) into **up to four catalogue choices**, ranked by how many families agree; the person picks one or searches. It was designed only on dev data (these eight photos and the 20 TrashNet dev photos), then frozen in commit `da7f88c`.
+
+| Set | Use | Named outright | Right item offered (named or in the list) | Unsupported items given a list |
+|---|---|---|---|---|
+| These 8 own photos | **dev, designed on them** | 0/6 at 512 px | 6/6 | 0/2 |
+| TrashNet dev, 512 px | dev | 5/13 | 10/13 | — |
+| TrashNet held-out, 512 px | **second use of this set**, one run, frozen | 2/7 | **6/7** | 3/3 |
+
+The own-photo figures are not evidence: the mapping was built from them. The TrashNet held-out set was used once before for mapping `.2`; nothing was changed after this run (`eval/results/20261010T081240Z-heldout.json`). The cost is visible too: every unsupported item got a short list, so the person taps "None of these" (average 2.3 choices shown). A fresh set of new household objects is needed before any Jaipur claim for `.4`.
