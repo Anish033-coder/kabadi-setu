@@ -37,7 +37,7 @@ Public frontend hosting, physical-phone browser testing and image recognition re
 
 ## Resumed implementation — 2026-10-08T23:02:27+05:30
 
-- Eight additional topic commits were made locally after 1641a55; no GitHub push.
+- Eight additional topic commits were made locally after f241865; no GitHub push.
 - Recognition implementation: 63 backend tests pass, including DynamoDB Local concurrent quota tests, ownership, exact-byte input and saved results after ambiguous failure. Bedrock is mocked in these tests.
 - Source and SAM-transformed IAM checks pass; permissions use exact resources apart from the necessary project-photo object prefix and project log streams. No wildcard actions or account-wide Resource:* permissions.
 - A fresh local clone with a newly installed Python environment and npm ci passed all 63 backend tests, five frontend tests and the production build. No integration tests skipped.
