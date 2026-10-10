@@ -1,0 +1,169 @@
+{
+  "note": "The same 8 own photos AFTER their held-out spot check (20261010T071649Z) was recorded; now a development set. Not evidence of accuracy.",
+  "provider": "rekognition",
+  "model": "DetectLabels:GENERAL_LABELS",
+  "region": "ap-south-1",
+  "size": 512,
+  "mapping_version": "2026-10-09.3",
+  "results": [
+    {
+      "photo": "photos/anish-oct10/f87c85ea75d5545e6e99d2af6fb83524920a259cdc811487347fd6fea1f6c3fc.jpg",
+      "expected": "cardboard",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": [
+        {
+          "name": "Box",
+          "confidence": 96.2
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/1e7e94a00d2efaa0e995334c496030e004b5cf6ef59c6b1edd99ce8d4cb3af84.jpg",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": [
+        {
+          "name": "Ammunition",
+          "confidence": 98.0
+        },
+        {
+          "name": "Grenade",
+          "confidence": 98.0
+        },
+        {
+          "name": "Weapon",
+          "confidence": 98.0
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/0cf8dae55283d2b97b961d388c53285b0657e996fa8d51fa910489efaed27c15.jpg",
+      "expected": "newspaper",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": [
+        {
+          "name": "Advertisement",
+          "confidence": 100.0
+        },
+        {
+          "name": "Poster",
+          "confidence": 100.0
+        },
+        {
+          "name": "Person",
+          "confidence": 98.1
+        },
+        {
+          "name": "Herbal",
+          "confidence": 93.5
+        },
+        {
+          "name": "Herbs",
+          "confidence": 93.5
+        },
+        {
+          "name": "Plant",
+          "confidence": 93.5
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/333306e43c99bae15b2fa4443703a241c025d96350c9f4e39ffcf66d3dd3688a.jpg",
+      "expected": "pet-bottle",
+      "predicted": "unknown",
+      "clarification": "bottle",
+      "labels": [
+        {
+          "name": "Bottle",
+          "confidence": 99.0
+        },
+        {
+          "name": "Plastic",
+          "confidence": 98.7
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/c94409c561eccab7433b5f1bb68ce8c6d91d67485c5a7886fe914e18752c4c65.jpg",
+      "expected": "rigid-plastic",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": [
+        {
+          "name": "Cookware",
+          "confidence": 93.3
+        },
+        {
+          "name": "Pot",
+          "confidence": 93.3
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/c62e9d9a5e0f7f0c00261566a92f5da5711bdaac0866aa1101c7a741e7e317ea.jpg",
+      "expected": "notebooks",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": [
+        {
+          "name": "Book",
+          "confidence": 99.5
+        },
+        {
+          "name": "Publication",
+          "confidence": 99.5
+        },
+        {
+          "name": "Guitar",
+          "confidence": 98.0
+        },
+        {
+          "name": "Musical Instrument",
+          "confidence": 98.0
+        },
+        {
+          "name": "Text",
+          "confidence": 96.8
+        },
+        {
+          "name": "Document",
+          "confidence": 94.6
+        },
+        {
+          "name": "Receipt",
+          "confidence": 94.6
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/642083568040f4aeb0ed64ee961f50277c50d3386869845f390b15c002c1e677.jpg",
+      "expected": "steel-utensil",
+      "predicted": "unknown",
+      "clarification": "bottle",
+      "labels": [
+        {
+          "name": "Aluminium",
+          "confidence": 99.6
+        },
+        {
+          "name": "Bottle",
+          "confidence": 99.3
+        },
+        {
+          "name": "Shaker",
+          "confidence": 94.3
+        }
+      ]
+    },
+    {
+      "photo": "photos/anish-oct10/1350eb26575b5a057e2b0e46a25ed2e9cba521df70caae63e520dfba00d346df.jpg",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "clarification": null,
+      "labels": []
+    }
+  ]
+}

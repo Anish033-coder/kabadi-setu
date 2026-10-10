@@ -82,6 +82,7 @@ function App() {
   const [chosen, setChosen] = useState<Item | null>(null),
     [condition, setCondition] = useState(""),
     [route, setRoute] = useState<Route | null>(null);
+  const chosenId = useRef("");
   const [tab, setTab] = useState("sort"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -238,21 +239,24 @@ function App() {
     });
   }
   function select(item: Item, source = "manual") {
+    chosenId.current = item.id;
     trial.current.select(item.id, source);
     setChosen(item);
     setCondition("");
     setRoute(null);
     setError("");
+    // Nothing to check by eye: show the rules' guidance straight away.
+    if (!item.check_clean) void decide("unsure", item);
   }
-  async function decide(value: string) {
+  async function decide(value: string, item = chosen) {
     trial.current.condition(value);
     setCondition(value);
-    if (chosen)
-      await run(async () =>
-        setRoute(
-          await api("/decide", { id: chosen.id, answers: { clean: value } }),
-        ),
-      );
+    if (item)
+      await run(async () => {
+        const next = await api("/decide", { id: item.id, answers: { clean: value } });
+        // Ignore a slow answer for an item the person has already moved away from.
+        if (chosenId.current === item.id) setRoute(next);
+      });
   }
   async function updateBasket(next: Row[]) {
     await run(async () => {
@@ -733,13 +737,7 @@ function App() {
                         </div>
                       </>
                     ) : (
-                      <button
-                        className="secondary"
-                        disabled={busy}
-                        onClick={() => decide("unsure")}
-                      >
-                        {t("Show guidance", "निर्देश देखें")}
-                      </button>
+                      !route && <p>{t("Checking the rules…", "नियम देख रहे हैं…")}</p>
                     )}
                     {route && (
                       <div
@@ -748,6 +746,13 @@ function App() {
                         }
                       >
                         <span className="eyebrow">{label(route.stream)}</span>
+                        {!route.eligible && (
+                          <strong>
+                            {chosen.check_clean
+                              ? t("Not ready for the basket", "अभी टोकरी के लिए नहीं")
+                              : t("Not for the scrap basket", "कबाड़ टोकरी के लिए नहीं")}
+                          </strong>
+                        )}
                         <p>{lang === "en" ? route.reason : route.reason_hi}</p>
                         {route.eligible && (
                           <button

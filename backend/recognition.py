@@ -149,7 +149,7 @@ class Recognition:
             allowed = {item['id'] for item in self.catalogue['items']}
             item_id = suggestion.item_id if suggestion.item_id in allowed else 'unknown'
             result.update(item_id=item_id,status='complete')
-            choices = options_for(suggestion.clarification, self.catalogue)
+            choices = options_for(suggestion.options, self.catalogue)
             if item_id == 'unknown' and choices:
                 result['clarification'] = {'kind':suggestion.clarification, 'options':choices}
             fields['needs_clarification'] = 'clarification' in result

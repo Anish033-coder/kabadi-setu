@@ -74,7 +74,7 @@ def main():
             try:
                 suggestion=recognizer.recognize(raw,catalogue)
                 result.update(predicted=suggestion.item_id,usage=suggestion.usage,status='complete',
-                              clarification=getattr(suggestion,'clarification',None))
+                              clarification=suggestion.clarification,options=list(suggestion.options))
                 if args.split == 'dev' and args.provider == 'rekognition':
                     result['labels'] = suggestion.labels
             except Exception as error: result.update(status='failed',error_type=type(error).__name__)
@@ -88,9 +88,12 @@ def main():
     for size in args.sizes:
         subset=[r for r in results if r['size']==size]
         correct=sum(r['status']=='complete' and r['predicted']==r['expected'] for r in subset)
-        asked=sum(bool(r.get('clarification')) for r in subset)
+        asked=sum(bool(r.get('options')) for r in subset)
+        # "Offered" = named outright, or in the short list the person chooses from. Unknowns excluded.
+        known=[r for r in subset if r['expected']!='unknown']
+        offered=sum(r['predicted']==r['expected'] or r['expected'] in r.get('options',()) for r in known)
         label='SPOT CHECK, not a benchmark — ' if args.spot_check else ''
         print(f'{label}{size}px: {correct}/{len(subset)} correct; {sum(r["predicted"]=="unknown" for r in subset)}/{len(subset)} unresolved; '
-              f'{asked}/{len(subset)} would ask a material question (mapping {MAPPING_VERSION})')
+              f'{asked}/{len(subset)} showed a short list; right item offered for {offered}/{len(known)} known items (mapping {MAPPING_VERSION})')
 
 if __name__=='__main__': main()

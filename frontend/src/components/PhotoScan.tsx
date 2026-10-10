@@ -120,12 +120,10 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion, o
       )}
       {clarification && (
         <fieldset className="photo-choices">
-          <legend>{clarification.kind === "bottle"
-            ? t("Which kind of bottle is it?", "यह किस तरह की बोतल है?")
-            : clarification.kind === "can"
-              ? t("Is this an aluminium drink can?", "क्या यह एल्यूमिनियम का पेय कैन है?")
-              : t("Which kind of container is it?", "यह किस तरह का डिब्बा है?")}</legend>
-          <p>{t("The photo cannot confirm the material. Choose only if you know.", "फोटो से सामग्री की पुष्टि नहीं हो सकती। पता हो तभी चुनें।")}</p>
+          <legend>{clarification.options.length === 1
+            ? t("Is it this?", "क्या यह है?")
+            : t("Which of these is it?", "इनमें से कौन-सा है?")}</legend>
+          <p>{t("The photo shows the kind of thing, not the exact item. Choose only if you know.", "फोटो से चीज़ का प्रकार दिखता है, सही सामान नहीं। पता हो तभी चुनें।")}</p>
           {clarification.options.map((id) => (
             <button className="secondary" type="button" key={id} onClick={() => choose(id)}>{itemName(id)}</button>
           ))}

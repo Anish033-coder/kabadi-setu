@@ -1,7 +1,7 @@
 """Interchangeable image suggestions; neither provider decides sorting or pickup."""
 from dataclasses import dataclass, field
 from typing import Protocol
-from .clarifications import question_for
+from .clarifications import shortlist
 
 
 @dataclass(frozen=True)
@@ -11,6 +11,7 @@ class Suggestion:
     # Development evaluation may inspect these; application logs never include them.
     labels: tuple = ()
     clarification: str | None = None
+    options: tuple = ()
 
 
 class Recognizer(Protocol):
@@ -56,7 +57,7 @@ LABEL_TO_CATALOGUE = {
     'fluorescent lamp': 'bulb',
 }
 MIN_CONFIDENCE = 90
-MAPPING_VERSION = '2026-10-09.3'
+MAPPING_VERSION = '2026-10-10.4'
 
 
 def confident_labels(labels):
@@ -66,16 +67,16 @@ def confident_labels(labels):
             and MIN_CONFIDENCE <= label['Confidence'] <= 100}
 
 
-def map_labels(labels, catalogue):
+def specific_items(names, catalogue):
     allowed = {item['id'] for item in catalogue['items']}
-    candidates = set()
-    confident_names = confident_labels(labels)
-    for name in confident_names:
-        item_id = LABEL_TO_CATALOGUE.get(name)
-        if item_id in allowed:
-            candidates.add(item_id)
-    if {'jar', 'plastic'} <= confident_names and 'rigid-plastic' in allowed:
+    candidates = {LABEL_TO_CATALOGUE.get(name) for name in names} & allowed
+    if {'jar', 'plastic'} <= names and 'rigid-plastic' in allowed:
         candidates.add('rigid-plastic')
+    return candidates
+
+
+def map_labels(labels, catalogue):
+    candidates = specific_items(confident_labels(labels), catalogue)
     # Never choose the highest label when two different supported items appear.
     return next(iter(candidates)) if len(candidates) == 1 else 'unknown'
 
@@ -95,15 +96,15 @@ class RekognitionRecognizer:
         labels = response.get('Labels', [])
         item_id = map_labels(labels, catalogue)
         names = confident_labels(labels)
-        # Do not narrow conflicting recognised objects into a misleading question.
-        known = {LABEL_TO_CATALOGUE[n] for n in names if n in LABEL_TO_CATALOGUE}
-        question = question_for(names) if item_id == 'unknown' and len(known) <= 1 else None
+        # Broad or conflicting labels become a short list for the person, never a guess.
+        kind, options = (shortlist(names, catalogue, sorted(specific_items(names, catalogue)))
+                         if item_id == 'unknown' else (None, ()))
         return Suggestion(item_id, {
             'image_requests': 1,
             'label_model_version': response.get('LabelModelVersion'),
             'mapping_version': MAPPING_VERSION,
         }, labels=tuple({'name':label.get('Name'), 'confidence':label.get('Confidence')}
-                        for label in labels), clarification=question)
+                        for label in labels), clarification=kind, options=options)
 
 
 def make_recognizer(provider, session):
