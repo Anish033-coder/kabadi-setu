@@ -26,7 +26,7 @@ export function PhotoScan({ enabled, provider, itemName, t, api, onSuggestion, o
     onCorrection();
     setSuggestion(null);
     setClarification(null);
-    setMessage(t("Please search the catalogue or choose an item.", "कृपया सूची में सामान खोजें या चुनें।"));
+    setMessage(t("Please search the catalogue or choose an item. Not in the list? Choose “Something else / unsure”.", "कृपया सूची में सामान खोजें या चुनें। सूची में नहीं है? “कुछ और / पता नहीं” चुनें।"));
   }
   async function scan(file: File) {
     onPhotoStart();

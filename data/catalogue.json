@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08.2",
+  "version": "2026-10-10.3",
   "status": "prototype guidance; local acceptance unverified",
   "source": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2219676",
   "items": [
@@ -219,8 +219,8 @@
       "check_clean": false,
       "candidate": false,
       "stream": "unresolved",
-      "guidance": "We cannot identify a safe route yet. Keep it out of the basket and ask your local waste service.",
-      "guidance_hi": "अभी सही तरीका पता नहीं है। इसे टोकरी से बाहर रखें और स्थानीय कचरा सेवा से पूछें।"
+      "guidance": "We can't sort this one yet. Keep it out of the basket and ask your kabadiwala about it in the same WhatsApp chat you use for pickups. If they don't take it, ask your local waste service.",
+      "guidance_hi": "इसे अभी छाँट नहीं सकते। इसे टोकरी से बाहर रखें और अपने कबाड़ीवाले से उसी WhatsApp चैट में पूछें जिसमें आप कबाड़ के लिए बात करते हैं। अगर वे न लें, तो स्थानीय कचरा सेवा से पूछें।"
     }
   ]
 }
