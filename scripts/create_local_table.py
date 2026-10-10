@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 import boto3
 from botocore.config import Config
-from botocore.exceptions import EndpointConnectionError, ConnectionClosedError
+from botocore.exceptions import EndpointConnectionError, ConnectionClosedError, ReadTimeoutError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.repository import ensure_table
@@ -16,12 +16,12 @@ if __name__ == '__main__':
                           aws_access_key_id='local', aws_secret_access_key='local',
                           config=Config(connect_timeout=1, read_timeout=1, retries={'max_attempts': 0}))
     # Docker can report a started container before Java is listening on the port.
-    for attempt in range(20):
+    for attempt in range(60):
         try:
             ensure_table(client, TABLE)
             break
-        except (EndpointConnectionError, ConnectionClosedError):
-            if attempt == 19:
+        except (EndpointConnectionError, ConnectionClosedError, ReadTimeoutError):
+            if attempt == 59:
                 raise
             time.sleep(0.5)
     print(f'{TABLE} is ready on DynamoDB Local.')
