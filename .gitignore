@@ -15,3 +15,6 @@ __pycache__/
 .tools-venv/
 eval/photos/
 eval/manifest.csv
+
+# Local drafts (blog, video script, submission text): kept off GitHub
+drafts/

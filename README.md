@@ -132,7 +132,7 @@ Each row names the test that would fail if the claim were false. Tests are in [`
 | Uploads are size-bounded; photos carrying metadata such as GPS are rejected | `test_upload_policy_is_size_bounded_and_exact_key`, `test_metadata_rejected` |
 | The Lambda's permissions stay scoped to this project | `test_source_and_transformed_iam_are_scoped`, `test_detect_labels_exception_cannot_widen` |
 
-Not tests, but checkable: photo deletion is the S3 lifecycle rule in [`template.yaml`](template.yaml); the short list was designed on development photos only and frozen in commit `4d60f99` before the held-out run ([decision 008](docs/decisions/008-short-list.md)).
+Not tests, but checkable: photo deletion is the S3 lifecycle rule in [`template.yaml`](template.yaml); the short list was designed on development photos only and frozen in commit `c720603` before the held-out run ([decision 008](docs/decisions/008-short-list.md)).
 
 ## What works, what doesn't yet, what we cut
 
@@ -217,7 +217,7 @@ policies/       Cedar policies and schema
 tests/          pytest suites, including races against DynamoDB Local
 eval/           photo tests and results
 infra/          budget stack · template.yaml at the root defines the app
-docs/           architecture, decisions, costs, problem log, video and blog drafts
+docs/           architecture, decisions, costs and problem log
 scripts/        deploy, demo user, cost and evaluation helpers
 ```
 
