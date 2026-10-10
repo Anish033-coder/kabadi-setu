@@ -83,6 +83,8 @@ function App() {
     [condition, setCondition] = useState(""),
     [route, setRoute] = useState<Route | null>(null);
   const chosenId = useRef("");
+  const sheetHeading = useRef<HTMLHeadingElement>(null);
+  const [justAdded, setJustAdded] = useState("");
   const [tab, setTab] = useState("sort"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -238,6 +240,20 @@ function App() {
       }
     });
   }
+  useEffect(() => {
+    // On phones the check panel is a bottom sheet: keep the list still behind it.
+    document.body.classList.toggle("sheet-open", !!chosen);
+    if (!chosen) return;
+    sheetHeading.current?.focus({ preventScroll: true });
+    const close = (e: KeyboardEvent) => e.key === "Escape" && setChosen(null);
+    addEventListener("keydown", close);
+    return () => removeEventListener("keydown", close);
+  }, [chosen]);
+  useEffect(() => {
+    if (!justAdded) return;
+    const timer = setTimeout(() => setJustAdded(""), 2500);
+    return () => clearTimeout(timer);
+  }, [justAdded]);
   function select(item: Item, source = "manual") {
     chosenId.current = item.id;
     trial.current.select(item.id, source);
@@ -303,6 +319,7 @@ function App() {
         /* Saving preferences is optional. */
       }
       setChosen(null);
+      setJustAdded(t(chosen.en, chosen.hi));
       setNotice(t("Added to your basket.", "टोकरी में जोड़ दिया।"));
     });
   }
@@ -656,6 +673,11 @@ function App() {
                         <Icon kind={item.icon} />
                       </span>
                       <strong>{lang === "en" ? item.en : item.hi}</strong>
+                      {basket.some((row) => row.id === item.id) && (
+                        <small className="in-basket">
+                          ✓ {t("In basket", "टोकरी में")}
+                        </small>
+                      )}
                       <span className="item-arrow">↗</span>
                     </button>
                   ))}
@@ -706,11 +728,28 @@ function App() {
                 )}
 
                 {chosen ? (
-                  <section className="panel review">
+                  <>
+                  <div
+                    className="sheet-backdrop"
+                    onClick={() => setChosen(null)}
+                  />
+                  <section
+                    className="panel review"
+                    aria-labelledby="review-heading"
+                  >
+                    <button
+                      className="sheet-close"
+                      aria-label={t("Close", "बंद करें")}
+                      onClick={() => setChosen(null)}
+                    >
+                      ×
+                    </button>
                     <p className="eyebrow">
                       {t("CHECK BEFORE YOU ADD", "जोड़ने से पहले जाँचें")}
                     </p>
-                    <h2>{lang === "en" ? chosen.en : chosen.hi}</h2>
+                    <h2 id="review-heading" ref={sheetHeading} tabIndex={-1}>
+                      {lang === "en" ? chosen.en : chosen.hi}
+                    </h2>
                     {chosen.check_clean ? (
                       <>
                         <p>
@@ -754,15 +793,26 @@ function App() {
                           </strong>
                         )}
                         <p>{lang === "en" ? route.reason : route.reason_hi}</p>
-                        {route.eligible && (
-                          <button
-                            className="primary"
-                            disabled={busy}
-                            onClick={add}
-                          >
-                            {t("Add to basket", "टोकरी में जोड़ें")} +
-                          </button>
-                        )}
+                        {route.eligible &&
+                          (basket.some((row) => row.id === chosen.id) ? (
+                            <button
+                              className="secondary"
+                              onClick={() => {
+                                setChosen(null);
+                                setTab("basket");
+                              }}
+                            >
+                              ✓ {t("Already in your basket · View", "पहले से टोकरी में · देखें")}
+                            </button>
+                          ) : (
+                            <button
+                              className="primary"
+                              disabled={busy}
+                              onClick={add}
+                            >
+                              {t("Add to basket", "टोकरी में जोड़ें")} +
+                            </button>
+                          ))}
                       </div>
                     )}
                     <button
@@ -772,6 +822,7 @@ function App() {
                       {t("Choose a different item", "दूसरा सामान चुनें")}
                     </button>
                   </section>
+                  </>
                 ) : (
                   <section className="panel how">
                     <div className="round-leaf">
@@ -824,6 +875,16 @@ function App() {
                 />
               </aside>
             </section>
+            {basket.length > 0 && !chosen && (
+              <button className="basket-bar" onClick={() => setTab("basket")}>
+                <span>
+                  {justAdded
+                    ? `✓ ${justAdded} ${t("added", "जोड़ा गया")}`
+                    : `${basket.length} ${t(basket.length === 1 ? "item in basket" : "items in basket", "सामान टोकरी में")}`}
+                </span>
+                <span>{t("View basket", "टोकरी देखें")} →</span>
+              </button>
+            )}
           </>
         ) : tab === "basket" ? (
           <section className="basket-layout">
