@@ -13,7 +13,7 @@ from botocore.config import Config
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from backend.recognizers import make_recognizer
+from backend.recognizers import make_recognizer, MAPPING_VERSION
 from backend.images import validate_photo
 from scripts.aws_identity import require_non_root
 
@@ -27,6 +27,8 @@ def main():
     parser.add_argument('--access-confirmed', action='store_true')
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--allow-paid-calls',action='store_true')
+    # A small own-photo check of frozen settings: reported as a spot check, never as a benchmark.
+    parser.add_argument('--spot-check',action='store_true')
     args=parser.parse_args()
     if not args.dry_run and not args.allow_paid_calls: parser.error('Explicit --allow-paid-calls is required.')
     if args.provider == 'bedrock' and not args.dry_run and not args.access_confirmed:
@@ -36,7 +38,10 @@ def main():
     catalogue=json.loads((ROOT/'data/catalogue.json').read_text())
     allowed={i['id'] for i in catalogue['items']} | {'unknown'}
     rows=list(csv.DictReader(args.manifest.open()))
-    if not 30<=len(rows)<=50: parser.error('Supply 30–50 labelled real photos.')
+    if args.spot_check:
+        if not 5<=len(rows)<30: parser.error('A spot check uses 5–29 photos; use the normal run for 30–50.')
+        if args.split!='heldout': parser.error('A spot check only evaluates frozen settings; nothing is tuned on it.')
+    elif not 30<=len(rows)<=50: parser.error('Supply 30–50 labelled real photos.')
     seen=set()
     for row in rows:
         path=(ROOT/'eval'/row['path']).resolve()
@@ -55,7 +60,7 @@ def main():
     recognizer=make_recognizer(args.provider, session)
     results=[]
     stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    output=ROOT/'eval/results'/f'{stamp}-{args.split}.json'
+    output=ROOT/'eval/results'/f'{stamp}-{"spotcheck" if args.spot_check else args.split}.json'
     output.parent.mkdir(exist_ok=True)
     for row in selected:
         for size in args.sizes:
@@ -68,19 +73,24 @@ def main():
             result={'photo':row['path'],'expected':row['label'],'size':size,'predicted':'unknown','usage':None}
             try:
                 suggestion=recognizer.recognize(raw,catalogue)
-                result.update(predicted=suggestion.item_id,usage=suggestion.usage,status='complete')
+                result.update(predicted=suggestion.item_id,usage=suggestion.usage,status='complete',
+                              clarification=getattr(suggestion,'clarification',None))
                 if args.split == 'dev' and args.provider == 'rekognition':
                     result['labels'] = suggestion.labels
             except Exception as error: result.update(status='failed',error_type=type(error).__name__)
             result['latency_ms']=round((time.perf_counter()-started)*1000)
             results.append(result)
-            output.write_text(json.dumps({'manifest_sha256':hashlib.sha256(args.manifest.read_bytes()).hexdigest(),'provider':args.provider,'model':recognizer.model_id,'region':'ap-south-1','split':args.split,'results':results},indent=2)+'\n')
+            output.write_text(json.dumps({'manifest_sha256':hashlib.sha256(args.manifest.read_bytes()).hexdigest(),'provider':args.provider,'model':recognizer.model_id,'region':'ap-south-1','split':args.split,
+                                          'mapping_version':MAPPING_VERSION,'spot_check':args.spot_check,'results':results},indent=2)+'\n')
             if result['status']=='failed':
                 print('Stopped after a failed call; partial result saved. Investigate before spending more.')
                 return
     for size in args.sizes:
         subset=[r for r in results if r['size']==size]
         correct=sum(r['status']=='complete' and r['predicted']==r['expected'] for r in subset)
-        print(f'{size}px: {correct}/{len(subset)} correct; {sum(r["predicted"]=="unknown" for r in subset)}/{len(subset)} unresolved')
+        asked=sum(bool(r.get('clarification')) for r in subset)
+        label='SPOT CHECK, not a benchmark — ' if args.spot_check else ''
+        print(f'{label}{size}px: {correct}/{len(subset)} correct; {sum(r["predicted"]=="unknown" for r in subset)}/{len(subset)} unresolved; '
+              f'{asked}/{len(subset)} would ask a material question (mapping {MAPPING_VERSION})')
 
 if __name__=='__main__': main()

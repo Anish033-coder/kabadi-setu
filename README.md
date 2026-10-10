@@ -8,7 +8,7 @@ A Jaipur prototype for sorting household items, keeping a scrap basket and askin
 
 **Evidence:** [Architecture](docs/architecture.md) · [Evaluation](eval/INTERNET_PHOTOS.md) · [Costs](docs/cost.md) · [Problem log](docs/problem-log.md) · [Timing protocol](docs/timing-trials.md)
 
-**Honest limits:** no collector validation or verified pickups; no measured household impact. Mapping `.2` recognised 2/7 supported held-out items (5/10 overall, including expected-unknown examples). Mapping `.3` clarification is a **post-benchmark UX change, not yet evaluated**. Bedrock remains blocked. Physical-phone and household timing results are pending. Local changes are not automatically live; see the verification log.
+**Honest limits:** no collector validation or verified pickups; no measured household impact. Mapping `.2` recognised 2/7 supported held-out items (5/10 overall, including expected-unknown examples). Mapping `.3` clarification is a **post-benchmark UX change**; an 8-photo spot check of Anish's own Jaipur photos found 1/6 supported items (cardboard) and never suggested a wrong item ([eval/OWN_PHOTOS.md](eval/OWN_PHOTOS.md)). Bedrock remains blocked. Physical-phone and household timing results are pending. Local changes are not automatically live; see the verification log.
 
 ## Try it as a judge
 

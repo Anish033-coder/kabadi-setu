@@ -1,0 +1,123 @@
+{
+  "manifest_sha256": "3af4d512df27ffc166b7cb949fda44a323240340f3bbfd1696ea2050c865fde6",
+  "provider": "rekognition",
+  "model": "DetectLabels:GENERAL_LABELS",
+  "region": "ap-south-1",
+  "split": "heldout",
+  "mapping_version": "2026-10-09.3",
+  "spot_check": true,
+  "results": [
+    {
+      "photo": "photos/anish-oct10/f87c85ea75d5545e6e99d2af6fb83524920a259cdc811487347fd6fea1f6c3fc.jpg",
+      "expected": "cardboard",
+      "size": 1024,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 417
+    },
+    {
+      "photo": "photos/anish-oct10/1e7e94a00d2efaa0e995334c496030e004b5cf6ef59c6b1edd99ce8d4cb3af84.jpg",
+      "expected": "unknown",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 241
+    },
+    {
+      "photo": "photos/anish-oct10/0cf8dae55283d2b97b961d388c53285b0657e996fa8d51fa910489efaed27c15.jpg",
+      "expected": "newspaper",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 505
+    },
+    {
+      "photo": "photos/anish-oct10/333306e43c99bae15b2fa4443703a241c025d96350c9f4e39ffcf66d3dd3688a.jpg",
+      "expected": "pet-bottle",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 442
+    },
+    {
+      "photo": "photos/anish-oct10/c94409c561eccab7433b5f1bb68ce8c6d91d67485c5a7886fe914e18752c4c65.jpg",
+      "expected": "rigid-plastic",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 270
+    },
+    {
+      "photo": "photos/anish-oct10/c62e9d9a5e0f7f0c00261566a92f5da5711bdaac0866aa1101c7a741e7e317ea.jpg",
+      "expected": "notebooks",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 277
+    },
+    {
+      "photo": "photos/anish-oct10/642083568040f4aeb0ed64ee961f50277c50d3386869845f390b15c002c1e677.jpg",
+      "expected": "steel-utensil",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "latency_ms": 439
+    },
+    {
+      "photo": "photos/anish-oct10/1350eb26575b5a057e2b0e46a25ed2e9cba521df70caae63e520dfba00d346df.jpg",
+      "expected": "unknown",
+      "size": 1024,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-09.3"
+      },
+      "status": "complete",
+      "clarification": null,
+      "latency_ms": 268
+    }
+  ]
+}
