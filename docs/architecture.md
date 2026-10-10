@@ -14,7 +14,7 @@ flowchart TD
     L --> R[Recognizer interface]
     R --> K[Rekognition: one DetectLabels call]
     R -. config switch, blocked .-> B[Bedrock: direct Converse]
-    K --> M[Conservative label mapping or clarification]
+    K --> M[Code: exact item or a short list of up to four]
     M --> U[Household confirms item and condition]
     U --> Q[Versioned rules: stream or unresolved]
     Q --> T[Basket and quote request]

@@ -1,36 +1,170 @@
-# KabadiSetu
+<h1 align="center">KabadiSetu · कबाड़ी सेतु</h1>
 
-**The AI names the item. Code decides where it goes. People decide what happens.**
+<p align="center">
+  <b>The AI names the item. Code decides where it goes. People decide what happens.</b><br>
+  Sorting help and kabadiwala pickups for Jaipur homes, in Hindi and English.<br>
+  Built for WeMakeDevs × AWS Environmental Hacks · Waste and Energy track.
+</p>
 
-A Jaipur prototype for sorting household items, keeping a scrap basket and asking a collector for a pickup through the household's own WhatsApp.
+<p align="center">
+  <a href="https://github.com/Anish033-coder/kabadi-setu/actions/workflows/checks.yml"><img alt="Checks" src="https://github.com/Anish033-coder/kabadi-setu/actions/workflows/checks.yml/badge.svg"></a>
+  <img alt="Live on AWS Mumbai" src="https://img.shields.io/badge/live-AWS%20Mumbai%20(ap--south--1)-FF9900">
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
 
-**Live prototype:** [Open KabadiSetu](https://main.d364mryjpwg6jn.amplifyapp.com/)
+<p align="center">
+  <a href="https://main.d364mryjpwg6jn.amplifyapp.com/"><b>Live app</b></a> ·
+  <a href="#try-it-in-five-minutes"><b>Judge's five-minute tour</b></a> ·
+  <a href="#claims-and-the-tests-that-check-them"><b>Claims and proof</b></a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="docs/decisions/">Decisions</a> ·
+  <a href="docs/problem-log.md">Problem log</a>
+</p>
 
-**Evidence:** [Architecture](docs/architecture.md) · [Evaluation](eval/INTERNET_PHOTOS.md) · [Costs](docs/cost.md) · [Problem log](docs/problem-log.md) · [Timing protocol](docs/timing-trials.md)
+<p align="center">
+  <img src="docs/media/phone-sort.jpg" alt="Item grid with a basket bar: one item tagged In basket" width="250">
+  <img src="docs/media/phone-ewaste.jpg" alt="Bottom sheet for old electronics: E-waste, Not for the scrap basket, with guidance" width="250">
+  <img src="docs/media/phone-collector.jpg" alt="Hindi collector page: the requested items with Accept and Decline buttons" width="250"><br>
+  <sub>Sorting with the basket bar · an item that can't join the basket · the kabadiwala's Hindi page. Captured from the local test build, same code as the live app.</sub>
+</p>
 
-**Honest limits:** no collector validation or verified pickups; no measured household impact. Rekognition named only 2/7 supported held-out items outright (mapping `.2`), and 1/6 in an 8-photo spot check of Anish's own Jaipur photos (mapping `.3`). Mapping `.4` offers a ranked short list of up to four items instead: on a second, frozen use of the public held-out set the right item was offered for 6/7, but every unsupported item also got a list ([eval/OWN_PHOTOS.md](eval/OWN_PHOTOS.md)). Not yet tested on new Jaipur photos. Bedrock remains blocked. Physical-phone and household timing results are pending. Local changes are not automatically live; see the verification log.
+## KabadiSetu in 60 seconds
 
-## Try it as a judge
+| | |
+|---|---|
+| **The problem** | Since 1 April 2026, India's Solid Waste Management Rules require every household to separate waste into four streams: wet, dry, sanitary and special care. Most people don't know where a battery, a bulb or a chips packet goes. The sellable part usually reaches the local kabadiwala as a one-word WhatsApp message ("aao") with no items or quantities, so he can't tell whether the trip is worth it. |
+| **What it does** | A household identifies an item by photo or search, confirms it, and answers what it can see ("clean and dry?"). Versioned rules give the stream and the reason. Sellable items build a basket; the household sends a clear quote request from its own WhatsApp. The kabadiwala opens a Hindi page with no app or login, accepts, then reports collection. Both sides see the same history. |
+| **Who uses it** | Households (email sign-in) and kabadiwalas (a private link, no account). |
+| **Where the AI sits** | Amazon Rekognition looks at the photo. Code turns its labels into one catalogue item or a short list of up to four, and the person chooses. The model has no tools: it cannot add to a basket, decide a stream or change a pickup. Items sorted before are one tap with no AI call. |
+| **What's proven** | Live on AWS in Mumbai. 116 automated tests, including double taps and a cancel racing an accept, run against DynamoDB Local. A measured photo scan costs about $0.0013. |
+| **What isn't** | No collector has used it or confirmed rates; every pickup so far is a test. No household timing trials yet. Bedrock is blocked on our account. Details: [Not yet](#not-yet). |
 
-Open https://main.d364mryjpwg6jn.amplifyapp.com on a phone or laptop and **create an account with any email address**: Amazon Cognito emails a verification code, then you sign in. Each account is its own household. (A shared demo login can also be supplied privately; credentials are never committed.)
+## Try it in five minutes
 
-1. Open a fresh browser session, create an account or sign in, and choose Hindi or English.
-2. Select Newspaper manually, confirm it is clean and dry, and add it to the basket. Photo recognition may be unavailable; that is disclosed rather than simulated.
-3. Prepare a pickup request and review its message. Open the recipient test page without sending a WhatsApp message to a real person.
-4. On the Hindi collector page, accept the request, then report it collected. Return to the household page and refresh to see its history. This is a test report, not verified collection.
-5. Return to sorting: Newspaper appears under Your usual items. Select it without an AI call and answer the condition question again. Optionally save a collector number on this browser only, after reviewing the number yourself.
+Open **https://main.d364mryjpwg6jn.amplifyapp.com** on a phone or laptop and **create an account with any email address**. Amazon Cognito emails a code; each account is its own household. Credentials are never committed.
 
-## What works today
+1. Choose Hindi or English. Tap **Old notebooks**, answer **Yes** to "clean and dry?", and add it to the basket. The check opens as a bottom sheet on phones, and the basket bar keeps count.
+2. Tap **Old electronics**. It says **Not for the scrap basket** and points to an authorised e-waste route. Batteries, bulbs and medicines behave the same way.
+3. Optional: photograph a notebook or bottle under **Identify from a photo**. You'll get the item or a short list to choose from (five scans per household per day).
+4. Open **Your basket**, prepare the pickup request and read the message. Use the recipient test page instead of messaging a real person.
+5. On the Hindi collector page, tap **Accept**, then **Report collected**. Refresh the household page to see the history. This is a test report, not verified collection.
+6. Back on sorting, Old notebooks is now under **Your usual items**: one tap, no AI call.
 
-Manual catalogue selection, deterministic sorting guidance, baskets, pickup requests and recipient-link responses. Household ownership and Cedar policies restrict actions; DynamoDB transactions protect status changes and action receipts. English and Hindi are available for the main flow.
+## How it works
 
-No collector has validated rates or minimum quantities, so the app prepares a quote request. Sending a WhatsApp link does not prove delivery. A link response is not identity verification or proof of physical collection/recycling.
+```mermaid
+flowchart TD
+    H[Household: phone browser] --> F[React on Amplify]
+    F --> C[Cognito: email and password]
+    F --> A[HTTP API: access-token authorizer]
+    A --> L[Python Lambda arm64: ownership and Cedar checks]
+    F -->|size-limited upload| S[Private S3: photos deleted after one day]
+    L -->|one bounded read| S
+    L -->|reserve daily quota first| D[DynamoDB: conditional transactions]
+    L --> R[Recognizer interface]
+    R --> K[Rekognition: one DetectLabels call]
+    R -. one setting, blocked on our account .-> B[Bedrock: Nova Lite]
+    K --> M[Code: exact item or a short list of up to four]
+    M --> U[Household confirms the item and its condition]
+    U --> Q[Versioned rules: stream and reason]
+    Q --> T[Basket and quote request]
+    T --> W[Household sends it from its own WhatsApp]
+    W --> P[Hindi collector page: private link]
+    P --> L
+    L -->|status, version, receipt and history in one transaction| D
+```
 
-The manual backend is deployed in Mumbai and its Cognito/API workflow passed live smoke tests. The frontend is hosted on Amplify; its recipient route and privacy headers have been verified over HTTP. A hosted-browser demo also passed sign-in, manual sorting, basket saving, request creation and the Hindi recipient acceptance/collection-report flow. Rekognition recognition is now enabled in Mumbai; Bedrock remains unavailable for this account. Authenticated scan routes use size-bounded uploads, one-read image validation and atomic daily quotas; the feature can be disabled without changing the manual path. A small public-photo benchmark is recorded in eval/INTERNET_PHOTOS.md; no real-world impact or model-cost savings is claimed.
+### AWS services, and why each one
 
-## Run locally
+| Service | What it does here | Why this one |
+|---|---|---|
+| **AWS Amplify Hosting** | Serves the React app with strict security headers | Static hosting with no servers to run |
+| **Amazon Cognito** | Household email sign-up and sign-in | Managed accounts; SMS login would need Indian DLT registration |
+| **Amazon API Gateway** (HTTP API) | Checks Cognito access tokens before any request reaches code | Cheapest API type, with a built-in JWT authorizer |
+| **AWS Lambda** (Python 3.14, arm64) | Rules, ownership checks, Cedar policies, pickup lifecycle | One Python backend runs locally and on Lambda; arm64 is cheaper |
+| **Amazon DynamoDB** | Baskets, requests, quotas; status, version, receipt and history change together | Conditional transactions make double taps and races safe without Step Functions |
+| **Amazon S3** | Private photo uploads | Size-limited presigned uploads; a lifecycle rule deletes photos after a day |
+| **Amazon Rekognition** | Suggests what a photo shows | Works on our India-billed account; about $0.00125 per image |
+| **AWS Systems Manager Parameter Store** | Holds the secret that signs collector links | Kept out of code and the template |
+| **Amazon CloudWatch** · **AWS Budgets** | Logs kept 14 days; alerts at $1, $5 and $10 | Cost and behaviour stay visible |
+| **AWS SAM** (CloudFormation) | Defines everything above in [`template.yaml`](template.yaml) | One reviewable deploy |
+| Amazon Bedrock | Adapter written and tested, switched off | Every call refused on our account ([problem log](docs/problem-log.md)) |
 
-Use Python 3.14, Node 22.13+ and Docker Desktop. From the project root:
+Authorisation uses [Cedar](https://www.cedarpolicy.com), AWS's open-source policy language ([`policies/access.cedar`](policies/access.cedar)).
+
+## Evidence in numbers
+
+| 116 tests | ≈ $0.13 | 6 of 7 | 1 day |
+|---|---|---|---|
+| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | public held-out photos where the right item was offered; 2 of 7 when the AI had to name it ([evaluation](eval/OWN_PHOTOS.md)) | how long a photo lives in S3 |
+
+## Claims and the tests that check them
+
+Each row names the test that would fail if the claim were false. Tests are in [`tests/`](tests); run one with `.venv/bin/python -m pytest -k <test name>`. In rows marked †, the workflow tests also run against DynamoDB Local (`make local-db`), not only in memory.
+
+| Claim | Test |
+|---|---|
+| A double tap on Accept gives one result, not two † | `test_simultaneous_duplicate_action_returns_one_result`, `test_accept_then_collect_and_duplicate_accept` |
+| A cancel racing an accept has exactly one winner † | `test_accept_cancel_race_has_one_winner` |
+| Another household can't read, change or analyse your data † | `test_other_household_cannot_read_or_change`, `test_another_household_cannot_analyze`, `test_cedar_rejects_other_owner` |
+| A collector link can't cancel the request, and dies when cancelled or expired † | `test_pickup_token_does_not_authorize_household_cancel`, `test_cancellation_revokes_link`, `test_expired_link_fails_even_while_record_exists` |
+| E-waste, batteries, medicines and other unsupported items never enter the basket † | `test_items_outside_ordinary_scrap_never_enter_the_basket`, `test_unsupported_and_unconfirmed_items_cannot_be_smuggled_into_basket` |
+| The AI never decides a route; it can only offer catalogue items | `test_material_question_is_saved_without_deciding_a_route`, `test_short_list_is_catalogue_scoped_and_capped`, `test_invalid_model_output_falls_back` |
+| Daily caps are reserved before a paid call, even under races | `test_daily_reservation_limits_calls`, `test_global_cap_race_never_exceeds_one_call`, `test_concurrent_analysis_calls_model_once` |
+| A failed model call is never retried automatically (it might be billed) | `test_ambiguous_failure_is_saved_without_retry_or_refund` |
+| An accepted pickup gets its own seven-day window † | `test_accepted_request_can_be_collected_after_the_reply_window`, `test_accepted_request_expires_after_the_pickup_window` |
+| Uploads are size-bounded; photos carrying metadata such as GPS are rejected | `test_upload_policy_is_size_bounded_and_exact_key`, `test_metadata_rejected` |
+| The Lambda's permissions stay scoped to this project | `test_source_and_transformed_iam_are_scoped`, `test_detect_labels_exception_cannot_widen` |
+
+Not tests, but checkable: photo deletion is the S3 lifecycle rule in [`template.yaml`](template.yaml); the short list was designed on development photos only and frozen in commit `da7f88c` before the held-out run ([decision 008](docs/decisions/008-short-list.md)).
+
+## What works, what doesn't yet, what we cut
+
+Checked against the live app on 10 October 2026.
+
+### Works
+
+- Live in Mumbai: sign-up and sign-in, manual sorting with versioned rules, baskets, pickup requests, the Hindi collector page (accept, report collected) and shared history.
+- Photo identification with Rekognition, under daily caps of five per household and fifty for the app, ending in an exact item or a short list.
+- Hindi and English across the main flow; a phone layout with a bottom sheet and basket bar.
+- No-AI shortcuts for items a household has sorted before.
+- Budget alerts, 14-day logs, security headers and CORS limited to the app's own address.
+
+### Not yet
+
+- **No collector has used it** or confirmed rates or minimum quantities, so the app asks for a quote. Every pickup so far is a test.
+- **No household timing trials** yet; the protocol is built in (`?trial=1`, [timing trials](docs/timing-trials.md)).
+- **Recognition on Jaipur homes isn't established** for the short list. An 8-photo spot check of my own photos found 1 of 6 items before it; those photos then shaped it, so they can't measure it ([evaluation](eval/OWN_PHOTOS.md)).
+- **Bedrock is blocked** on our India-billed account; a support case is open.
+- A collection report is not proof of recycling, and a collector link is not identity verification.
+
+### Cut, and why
+
+- **Strands Agents:** one model call with no agent loop needs no framework ([decision 004](docs/decisions/004-direct-recognition.md)).
+- **Step Functions:** DynamoDB conditional transactions already express the pickup lifecycle.
+- **WhatsApp Business API:** the household sends from its own WhatsApp, so nothing is sent without it and no business verification is needed.
+- **SMS login:** Indian SMS requires DLT registration.
+- **Reserved Lambda concurrency:** the account limit is ten ([decision 003](docs/decisions/003-aws-profile-and-concurrency.md)).
+- **Collector minimums in the basket:** no validated data, so a quote request instead.
+- **Maps, ward dashboards, embeddings, AgentCore:** out of scope for four days.
+
+## Hard questions
+
+**What if the AI is wrong?** It never acts. It suggests; the person confirms; code decides the stream. "None of these" is always on screen, and unsupported items cannot enter the basket whatever the photo says.
+
+**Why not just ask a model which bin?** The rules are new and must be explainable. A versioned catalogue gives the same answer and reason every time, and each rule note can be checked ([`data/catalogue.json`](data/catalogue.json)).
+
+**Why Rekognition instead of Bedrock?** Bedrock refused every call on our account (`Operation not allowed`, in every region we tried). Recognition sits behind one interface, so switching took one setting and no redesign. The Bedrock adapter is still here, tested.
+
+**Why WhatsApp links instead of an app for the kabadiwala?** Kabadiwalas already use WhatsApp. A link opens a Hindi page with two buttons: no install and no password.
+
+**What does it cost?** One measured photo flow costs about $0.00129, 97% of it the image request; manual sorting costs about $0.000001 ([cost](docs/cost.md)). Daily caps are reserved before any paid call.
+
+**Was anything built before kickoff?** No. See [Authorship and timeline](#authorship-and-timeline).
+
+## Run it locally
+
+Python 3.14, Node 22.13+ and Docker Desktop. From the project root:
 
 ```sh
 python3.14 -m venv .venv
@@ -39,57 +173,46 @@ make local-db
 TABLE_NAME=kabadi-setu-local DYNAMODB_ENDPOINT=http://127.0.0.1:8000 .venv/bin/python -m backend.local
 ```
 
-In another terminal:
+No Docker? `LOCAL_MEMORY=1 .venv/bin/python -m backend.local` keeps everything in memory. Then, in another terminal:
 
 ```sh
-cd frontend
-npm ci
-npm run dev
+cd frontend && npm ci && npm run dev
 ```
 
-Open http://127.0.0.1:5173. The local adapter creates temporary browser sessions instead of Cognito logins. Restarting it changes the local session/link secret; existing local links and household sessions should not be treated as durable. WhatsApp sharing stays disabled locally because another phone cannot reach a loopback URL.
+Open http://127.0.0.1:5173. Local mode uses temporary sessions instead of Cognito and makes no AWS calls. WhatsApp sharing is off locally because another phone can't reach a loopback address.
 
-```sh
-make test
-cd frontend
-npm test
-npm run build
+Tests: `make test` (start `make local-db` first, or the DynamoDB cases are skipped, and a skipped run is not database validation), then `cd frontend && npm test && npm run build`.
+
+## Deploy to your own AWS account
+
+1. Use a non-root AWS session; `make preflight` checks it without changing anything.
+2. Install AWS SAM CLI. `make build` uses the Linux arm64 build container.
+3. Deploy [`infra/budget.yaml`](infra/budget.yaml) as a separate stack with your `AlertEmail` and confirm all three alerts. An alert is not a spending cap.
+4. Create the link secret once with `make secret`. Rotating it invalidates existing collector links.
+5. `make deploy`, review the change set, and set `AllowedOrigins` to your exact frontend address.
+6. Put the stack outputs in `frontend/.env.local` (see `.env.example`), then publish with `scripts/deploy_frontend.py`.
+7. Check sign-in, cross-household denial, link expiry and the full request flow before enabling recognition (`RecognitionEnabled=true`, `RecognitionProvider=rekognition` or `bedrock`).
+
+## Repository
+
+```text
+backend/        Python API: rules, workflow, recognition, Cedar checks (same code locally and on Lambda)
+frontend/       React + Vite app, Hindi and English
+data/           catalogue.json: 18 items, streams, guidance and rule notes
+policies/       Cedar policies and schema
+tests/          pytest suites, including races against DynamoDB Local
+eval/           photo benchmark, spot check and results
+infra/          budget stack · template.yaml at the root defines the app
+docs/           architecture, decisions, costs, problem log, video and blog drafts
+scripts/        deploy, demo user, cost and evaluation helpers
 ```
 
-DynamoDB integration tests require the local container; pytest reports skips when it cannot connect. Do not report a skipped run as database validation.
+## Authorship and timeline
 
-## Before AWS deployment
+Developed by Anish Kumawat for WeMakeDevs × AWS Environmental Hacks (Waste and Energy track). AI assistance, as the rules require us to disclose: **Codex** wrote most of the implementation; **Claude** did research, code review and review fixes, and took over the remaining work from 9 October after Codex's usage limit was reached. Each commit message says who wrote the change.
 
-1. Configure a non-root AWS session. `make preflight` checks the identity without changing resources. Do not share credentials or put them in this repository.
-2. Install AWS SAM CLI. `make build` uses the Linux arm64 build container for native dependencies.
-3. Deploy `infra/budget.yaml` as a separate budget stack with the `AlertEmail` parameter. Verify all three notifications before deploying the app. This account-wide alert is not a spending cap.
-4. Create the SSM link secret once with `make secret`. It refuses root and never prints its value. Do not rotate it casually: rotation invalidates existing links.
-5. Review the SAM change set and set `AllowedOrigins` to the exact frontend origin. The initial localhost default is for development, not public hosting. The current Mumbai account concurrency quota is 10; no increase or per-function reservation is requested.
-6. After deploying the manual app, use stack outputs in `frontend/.env.local` (see `.env.example`). Configure the host to return the app for `/r` and send `Cache-Control: no-store` and `Referrer-Policy: no-referrer` on the recipient page.
-7. Verify household sign-in, cross-household denial, link expiry and the full request flow live before connecting Bedrock.
+The official schedule lists kickoff as Thursday 8 October 2026, without a specific hour. The earliest project files were created on 8 October at about 11:40 IST, and the Git history starts the same day. Nothing was built before the event.
 
-The model probe is intentionally opt-in, and its result proves only that the calling AWS identity can use that model. Provider-specific runtime permissions and quotas are implemented; Bedrock access and its live Lambda integration remain unverified.
+## Licence
 
-See [cost controls](docs/cost.md) and [retry decisions](docs/decisions/002-retries-and-sessions.md).
-
-
-
-
-
-## Recognition limits and evaluation
-
-Recognition is disabled by default and has no Bedrock permission while disabled. Set `RecognitionProvider=rekognition` for one DetectLabels call with a conservative code mapping, or `bedrock` for one direct Nova Lite call after its authorization is resolved. The household must confirm the suggested item before condition checks. Invalid output becomes unknown; no model tools can change a basket or pickup. The daily UTC limits are five inference reservations per household and fifty for the whole app. Upload grants are also limited. Errors do not automatically refund a possibly billed call. A new scan of the same photo is not yet deduplicated by hash across scans.
-
-See `eval/README.md` for the 30–50-photo plan. A 30-image public-photo benchmark is complete: 20 development and 10 held out. Mapping `.2` held-out results were 5/10 correct including expected-unknown negatives, with only 2/7 supported items recognised. Mapping `.4` (short list, designed on dev photos only) offered the right item for 6/7 on a second use of that held-out set; see `eval/OWN_PHOTOS.md`. It does not establish Jaipur-user performance; no recognition cost savings is claimed. The shortcut count measures selections on that browser, not a proven counterfactual reduction in spending.
-
-GitHub Actions checks local DynamoDB integration, IAM policies, Python tests, frontend tests and the frontend build. Its workflow is committed locally but has not run on GitHub while pushes are paused.
-
-## Recognition fallback status — October 9
-
-The Rekognition and Bedrock adapters share the same scan ownership, validation, quota and saved-result flow. The template defaults to Rekognition with recognition **disabled**. Enable only after a successful account probe and reviewed deployment. The IAM test permits one documented global-resource exception: `rekognition:DetectLabels`, restricted to Mumbai. See [decision 005](docs/decisions/005-recognition-providers.md). Rekognition is deployed and the synthetic hosted upload/analyze/repeat check passed. This proves connectivity and saved-result reuse, not accuracy on real items.
-
-## Authorship and event timeline
-
-Developed by Anish Kumawat for WeMakeDevs × AWS Environmental Hacks (Waste and Energy track). AI assistance, as the event rules require us to disclose: **Codex** wrote most of the implementation; **Claude** did research, code review and review fixes, and took over the remaining work from October 9 after Codex's usage limit was reached. Each commit message says who wrote the change. Dependencies keep their upstream licences; the TrashNet evaluation photos are MIT-licensed and credited in `eval/`.
-
-The official schedule lists kickoff as Thursday, October 8, 2026, without a specific hour. The earliest project files were created on October 8 at about 11:40 IST, and the Git history starts the same day. Nothing was built before the event.
+[MIT](LICENSE) © 2026 Anish Kumawat. Dependencies keep their own licences; the TrashNet evaluation photos are MIT-licensed and credited in [`eval/`](eval).
