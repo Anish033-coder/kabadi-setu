@@ -35,6 +35,7 @@
 | **The problem** | Since 1 April 2026, India's Solid Waste Management Rules require every household to separate waste into four streams: wet, dry, sanitary and special care. Most people don't know where a battery, a bulb or a chips packet goes. The sellable part usually reaches the local kabadiwala as a one-word WhatsApp message ("aao") with no items or quantities, so he can't tell whether the trip is worth it. |
 | **What it does** | A household identifies an item by photo or search, confirms it, and answers what it can see ("clean and dry?"). Versioned rules give the stream and the reason. Sellable items build a basket; the household sends a clear quote request from its own WhatsApp. The kabadiwala opens a Hindi page with no app or login, accepts, then reports collection. Both sides see the same history. |
 | **Who uses it** | Households (email sign-in) and kabadiwalas (a private link, no account). |
+| **Built with** | React + TypeScript on Amplify · Python 3.14 on Lambda · DynamoDB · Rekognition · Cognito · Cedar · AWS SAM. Full list: [Tech stack](#tech-stack). |
 | **Where the AI sits** | Amazon Rekognition looks at the photo. Code turns its labels into one catalogue item or a short list of up to four, and the person chooses. The model has no tools: it cannot add to a basket, decide a stream or change a pickup. Items sorted before are one tap with no AI call. |
 | **What's proven** | Live on AWS in Mumbai. 116 automated tests, including double taps and a cancel racing an accept, run against DynamoDB Local. A measured photo scan costs about $0.0013. |
 | **What isn't** | No collector has used it or confirmed rates; every pickup so far is a test. No household timing trials yet. Bedrock is blocked on my account. Details: [Not yet](#not-yet). |
@@ -74,6 +75,21 @@ flowchart TD
     L -->|status, version, receipt and history in one transaction| D
 ```
 
+### Tech stack
+
+| Part | Built with |
+|---|---|
+| **Frontend** | React 19, TypeScript 5.9, Vite 8 and plain CSS. Hindi and English built in. No UI library, so the app stays small on slow phones. |
+| **Sign-in** | Amazon Cognito, called directly over its HTTPS API (no Amplify SDK). |
+| **Backend** | Python 3.14 on AWS Lambda (arm64), AWS Lambda Powertools for routing and logs, boto3. The same code runs on a laptop for local testing. |
+| **Access rules** | Cedar policies through `cedarpy`, checked against a schema. |
+| **Data** | Amazon DynamoDB (one table, conditional transactions). Sorting rules live in a versioned catalogue, [`data/catalogue.json`](data/catalogue.json). |
+| **Photos** | The browser shrinks each photo to 1024 px and re-saves it as JPEG, which drops metadata such as GPS. Pillow checks it again on the server; Amazon Rekognition suggests what it shows. |
+| **Messaging** | WhatsApp click-to-chat links (`wa.me`), sent from the household's own phone. |
+| **Infrastructure** | AWS SAM (CloudFormation), Amplify Hosting, S3, SSM Parameter Store, CloudWatch, AWS Budgets. |
+| **Testing** | pytest (109 tests) with DynamoDB Local in Docker; Node's built-in test runner (7 frontend tests); TypeScript type checks. |
+| **CI** | GitHub Actions: Python and frontend tests, IAM policy checks, DynamoDB Local integration and the production build. |
+
 ### AWS services, and why each one
 
 | Service | What it does here | Why this one |
@@ -96,7 +112,7 @@ Authorisation uses [Cedar](https://www.cedarpolicy.com), AWS's open-source polic
 
 | 116 tests | ≈ $0.13 | 6 of 7 | 1 day |
 |---|---|---|---|
-| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | public held-out photos where the right item was offered; 2 of 7 when the AI had to name it ([evaluation](eval/OWN_PHOTOS.md)) | how long a photo lives in S3 |
+| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | public held-out photos where the right item was offered; 2 of 7 when the AI had to name it ([evaluation](eval/INTERNET_PHOTOS.md)) | how long a photo lives in S3 |
 
 ## Claims and the tests that check them
 
@@ -134,7 +150,7 @@ Checked against the live app on 10 October 2026.
 
 - **No collector has used it** or confirmed rates or minimum quantities, so the app asks for a quote. Every pickup so far is a test.
 - **No household timing trials** yet; the protocol is built in (`?trial=1`, [timing trials](docs/timing-trials.md)).
-- **Recognition on Jaipur homes isn't established** for the short list. An 8-photo spot check of my own photos found 1 of 6 items before it; those photos then shaped it, so they can't measure it ([evaluation](eval/OWN_PHOTOS.md)).
+- **Photo accuracy is measured on public photos only.** On 10 held-out public photos, Rekognition named 2 of 7 known items on its own; with the short list, the right item was offered for 6 of 7. Items the app doesn't support also got a list, so "None of these" stays on screen. I also tried it on photos from my home ([evaluation](eval/INTERNET_PHOTOS.md)).
 - **Bedrock is blocked** on my India-billed account; a support case is open.
 - A collection report is not proof of recycling, and a collector link is not identity verification.
 
@@ -159,8 +175,6 @@ Checked against the live app on 10 October 2026.
 **Why WhatsApp links instead of an app for the kabadiwala?** Kabadiwalas already use WhatsApp. A link opens a Hindi page with two buttons: no install and no password.
 
 **What does it cost?** One measured photo flow costs about $0.00129, 97% of it the image request; manual sorting costs about $0.000001 ([cost](docs/cost.md)). Daily caps are reserved before any paid call.
-
-**Was anything built before kickoff?** No. The Git history starts on 8 October 2026, kickoff day.
 
 ## Run it locally
 
@@ -201,7 +215,7 @@ frontend/       React + Vite app, Hindi and English
 data/           catalogue.json: 18 items, streams, guidance and rule notes
 policies/       Cedar policies and schema
 tests/          pytest suites, including races against DynamoDB Local
-eval/           photo benchmark, spot check and results
+eval/           photo tests and results
 infra/          budget stack · template.yaml at the root defines the app
 docs/           architecture, decisions, costs, problem log, video and blog drafts
 scripts/        deploy, demo user, cost and evaluation helpers
