@@ -12,9 +12,9 @@ A Jaipur prototype for sorting household items, keeping a scrap basket and askin
 
 ## Try it as a judge
 
-Use the shared demo credentials supplied privately by the author; they are never committed. The author’s copy is `.local/demo-household.json`. Hosting URL: https://main.d364mryjpwg6jn.amplifyapp.com (check the verification log for deployment status).
+Open https://main.d364mryjpwg6jn.amplifyapp.com on a phone or laptop and **create an account with any email address**: Amazon Cognito emails a verification code, then you sign in. Each account is its own household. (A shared demo login can also be supplied privately; credentials are never committed.)
 
-1. Open a fresh browser session and sign in with the demo household. Choose Hindi or English.
+1. Open a fresh browser session, create an account or sign in, and choose Hindi or English.
 2. Select Newspaper manually, confirm it is clean and dry, and add it to the basket. Photo recognition may be unavailable; that is disclosed rather than simulated.
 3. Prepare a pickup request and review its message. Open the recipient test page without sending a WhatsApp message to a real person.
 4. On the Hindi collector page, accept the request, then report it collected. Return to the household page and refresh to see its history. This is a test report, not verified collection.
