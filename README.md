@@ -37,7 +37,7 @@
 | **Who uses it** | Households (email sign-in) and kabadiwalas (a private link, no account). |
 | **Where the AI sits** | Amazon Rekognition looks at the photo. Code turns its labels into one catalogue item or a short list of up to four, and the person chooses. The model has no tools: it cannot add to a basket, decide a stream or change a pickup. Items sorted before are one tap with no AI call. |
 | **What's proven** | Live on AWS in Mumbai. 116 automated tests, including double taps and a cancel racing an accept, run against DynamoDB Local. A measured photo scan costs about $0.0013. |
-| **What isn't** | No collector has used it or confirmed rates; every pickup so far is a test. No household timing trials yet. Bedrock is blocked on our account. Details: [Not yet](#not-yet). |
+| **What isn't** | No collector has used it or confirmed rates; every pickup so far is a test. No household timing trials yet. Bedrock is blocked on my account. Details: [Not yet](#not-yet). |
 
 ## Try it in five minutes
 
@@ -63,7 +63,7 @@ flowchart TD
     L -->|reserve daily quota first| D[DynamoDB: conditional transactions]
     L --> R[Recognizer interface]
     R --> K[Rekognition: one DetectLabels call]
-    R -. one setting, blocked on our account .-> B[Bedrock: Nova Lite]
+    R -. one setting, blocked on my account .-> B[Bedrock: Nova Lite]
     K --> M[Code: exact item or a short list of up to four]
     M --> U[Household confirms the item and its condition]
     U --> Q[Versioned rules: stream and reason]
@@ -84,11 +84,11 @@ flowchart TD
 | **AWS Lambda** (Python 3.14, arm64) | Rules, ownership checks, Cedar policies, pickup lifecycle | One Python backend runs locally and on Lambda; arm64 is cheaper |
 | **Amazon DynamoDB** | Baskets, requests, quotas; status, version, receipt and history change together | Conditional transactions make double taps and races safe without Step Functions |
 | **Amazon S3** | Private photo uploads | Size-limited presigned uploads; a lifecycle rule deletes photos after a day |
-| **Amazon Rekognition** | Suggests what a photo shows | Works on our India-billed account; about $0.00125 per image |
+| **Amazon Rekognition** | Suggests what a photo shows | Works on my India-billed account; about $0.00125 per image |
 | **AWS Systems Manager Parameter Store** | Holds the secret that signs collector links | Kept out of code and the template |
 | **Amazon CloudWatch** · **AWS Budgets** | Logs kept 14 days; alerts at $1, $5 and $10 | Cost and behaviour stay visible |
 | **AWS SAM** (CloudFormation) | Defines everything above in [`template.yaml`](template.yaml) | One reviewable deploy |
-| Amazon Bedrock | Adapter written and tested, switched off | Every call refused on our account ([problem log](docs/problem-log.md)) |
+| Amazon Bedrock | Adapter written and tested, switched off | Every call refused on my account ([problem log](docs/problem-log.md)) |
 
 Authorisation uses [Cedar](https://www.cedarpolicy.com), AWS's open-source policy language ([`policies/access.cedar`](policies/access.cedar)).
 
@@ -135,7 +135,7 @@ Checked against the live app on 10 October 2026.
 - **No collector has used it** or confirmed rates or minimum quantities, so the app asks for a quote. Every pickup so far is a test.
 - **No household timing trials** yet; the protocol is built in (`?trial=1`, [timing trials](docs/timing-trials.md)).
 - **Recognition on Jaipur homes isn't established** for the short list. An 8-photo spot check of my own photos found 1 of 6 items before it; those photos then shaped it, so they can't measure it ([evaluation](eval/OWN_PHOTOS.md)).
-- **Bedrock is blocked** on our India-billed account; a support case is open.
+- **Bedrock is blocked** on my India-billed account; a support case is open.
 - A collection report is not proof of recycling, and a collector link is not identity verification.
 
 ### Cut, and why
@@ -154,13 +154,13 @@ Checked against the live app on 10 October 2026.
 
 **Why not just ask a model which bin?** The rules are new and must be explainable. A versioned catalogue gives the same answer and reason every time, and each rule note can be checked ([`data/catalogue.json`](data/catalogue.json)).
 
-**Why Rekognition instead of Bedrock?** Bedrock refused every call on our account (`Operation not allowed`, in every region we tried). Recognition sits behind one interface, so switching took one setting and no redesign. The Bedrock adapter is still here, tested.
+**Why Rekognition instead of Bedrock?** Bedrock refused every call on my account (`Operation not allowed`, in every region I tried). Recognition sits behind one interface, so switching took one setting and no redesign. The Bedrock adapter is still here, tested.
 
 **Why WhatsApp links instead of an app for the kabadiwala?** Kabadiwalas already use WhatsApp. A link opens a Hindi page with two buttons: no install and no password.
 
 **What does it cost?** One measured photo flow costs about $0.00129, 97% of it the image request; manual sorting costs about $0.000001 ([cost](docs/cost.md)). Daily caps are reserved before any paid call.
 
-**Was anything built before kickoff?** No. See [Authorship and timeline](#authorship-and-timeline).
+**Was anything built before kickoff?** No. The Git history starts on 8 October 2026, kickoff day.
 
 ## Run it locally
 
@@ -207,11 +207,9 @@ docs/           architecture, decisions, costs, problem log, video and blog draf
 scripts/        deploy, demo user, cost and evaluation helpers
 ```
 
-## Authorship and timeline
+## Authorship
 
-Developed by Anish Kumawat for WeMakeDevs × AWS Environmental Hacks (Waste and Energy track). AI assistance, as the rules require us to disclose: **Codex** wrote most of the implementation; **Claude** did research, code review and review fixes, and took over the remaining work from 9 October after Codex's usage limit was reached. Each commit message says who wrote the change.
-
-The official schedule lists kickoff as Thursday 8 October 2026, without a specific hour. The earliest project files were created on 8 October at about 11:40 IST, and the Git history starts the same day. Nothing was built before the event.
+Developed by Anish Kumawat for WeMakeDevs × AWS Environmental Hacks (Waste and Energy track). AI assistance, as the rules require: **Codex** and **Claude**.
 
 ## Licence
 
