@@ -1,0 +1,538 @@
+{
+  "manifest_sha256": "37ce2351c03a72b5609f37b353b0447d43dbaa6fd54db038c76b5d20b50e0ed8",
+  "provider": "rekognition",
+  "model": "DetectLabels:GENERAL_LABELS",
+  "region": "ap-south-1",
+  "split": "heldout",
+  "mapping_version": "2026-10-10.4",
+  "spot_check": false,
+  "results": [
+    {
+      "photo": "photos/trashnet-fresh/cardboard263.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "box",
+      "options": [
+        "cardboard"
+      ],
+      "latency_ms": 569
+    },
+    {
+      "photo": "photos/trashnet-fresh/cardboard208.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 171
+    },
+    {
+      "photo": "photos/trashnet-fresh/cardboard45.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 180
+    },
+    {
+      "photo": "photos/trashnet-fresh/cardboard118.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 152
+    },
+    {
+      "photo": "photos/trashnet-fresh/cardboard79.jpg",
+      "expected": "cardboard",
+      "size": 512,
+      "predicted": "cardboard",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 161
+    },
+    {
+      "photo": "photos/trashnet-fresh/glass488.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "container",
+      "options": [
+        "rigid-plastic",
+        "steel-utensil",
+        "glass-bottle"
+      ],
+      "latency_ms": 278
+    },
+    {
+      "photo": "photos/trashnet-fresh/glass219.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 160
+    },
+    {
+      "photo": "photos/trashnet-fresh/glass252.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 150
+    },
+    {
+      "photo": "photos/trashnet-fresh/glass286.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "can",
+      "options": [
+        "aluminium-can"
+      ],
+      "latency_ms": 186
+    },
+    {
+      "photo": "photos/trashnet-fresh/glass251.jpg",
+      "expected": "glass-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "glass-bottle",
+        "pet-bottle",
+        "rigid-plastic",
+        "steel-utensil"
+      ],
+      "latency_ms": 163
+    },
+    {
+      "photo": "photos/trashnet-fresh/metal265.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "can",
+      "options": [
+        "aluminium-can",
+        "steel-utensil"
+      ],
+      "latency_ms": 155
+    },
+    {
+      "photo": "photos/trashnet-fresh/metal217.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "can",
+      "options": [
+        "aluminium-can",
+        "electronics"
+      ],
+      "latency_ms": 143
+    },
+    {
+      "photo": "photos/trashnet-fresh/metal391.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "can",
+      "options": [
+        "aluminium-can"
+      ],
+      "latency_ms": 364
+    },
+    {
+      "photo": "photos/trashnet-fresh/metal18.jpg",
+      "expected": "aluminium-can",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "can",
+      "options": [
+        "aluminium-can"
+      ],
+      "latency_ms": 148
+    },
+    {
+      "photo": "photos/trashnet-fresh/metal177.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "metal",
+      "options": [
+        "steel-utensil",
+        "aluminium-can"
+      ],
+      "latency_ms": 152
+    },
+    {
+      "photo": "photos/trashnet-fresh/paper466.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "metal",
+      "options": [
+        "steel-utensil",
+        "aluminium-can"
+      ],
+      "latency_ms": 352
+    },
+    {
+      "photo": "photos/trashnet-fresh/paper521.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "paper",
+      "options": [
+        "newspaper",
+        "notebooks",
+        "office-paper",
+        "cardboard"
+      ],
+      "latency_ms": 150
+    },
+    {
+      "photo": "photos/trashnet-fresh/paper100.jpg",
+      "expected": "office-paper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "paper",
+      "options": [
+        "newspaper",
+        "notebooks",
+        "office-paper",
+        "cardboard"
+      ],
+      "latency_ms": 194
+    },
+    {
+      "photo": "photos/trashnet-fresh/paper9.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "paper",
+      "options": [
+        "newspaper",
+        "notebooks",
+        "office-paper",
+        "cardboard"
+      ],
+      "latency_ms": 156
+    },
+    {
+      "photo": "photos/trashnet-fresh/paper577.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "paper",
+      "options": [
+        "newspaper",
+        "notebooks",
+        "office-paper",
+        "cardboard"
+      ],
+      "latency_ms": 153
+    },
+    {
+      "photo": "photos/trashnet-fresh/plastic235.jpg",
+      "expected": "pet-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 159
+    },
+    {
+      "photo": "photos/trashnet-fresh/plastic250.jpg",
+      "expected": "rigid-plastic",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 155
+    },
+    {
+      "photo": "photos/trashnet-fresh/plastic303.jpg",
+      "expected": "rigid-plastic",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 206
+    },
+    {
+      "photo": "photos/trashnet-fresh/plastic380.jpg",
+      "expected": "pet-bottle",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "bottle",
+      "options": [
+        "pet-bottle",
+        "glass-bottle"
+      ],
+      "latency_ms": 153
+    },
+    {
+      "photo": "photos/trashnet-fresh/plastic463.jpg",
+      "expected": "wrapper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 157
+    },
+    {
+      "photo": "photos/trashnet-fresh/trash14.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 154
+    },
+    {
+      "photo": "photos/trashnet-fresh/trash2.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": null,
+      "options": [],
+      "latency_ms": 167
+    },
+    {
+      "photo": "photos/trashnet-fresh/trash56.jpg",
+      "expected": "unknown",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "paper",
+      "options": [
+        "newspaper",
+        "notebooks",
+        "office-paper",
+        "cardboard"
+      ],
+      "latency_ms": 151
+    },
+    {
+      "photo": "photos/trashnet-fresh/trash43.jpg",
+      "expected": "wrapper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "electronics",
+      "options": [
+        "electronics"
+      ],
+      "latency_ms": 162
+    },
+    {
+      "photo": "photos/trashnet-fresh/trash45.jpg",
+      "expected": "wrapper",
+      "size": 512,
+      "predicted": "unknown",
+      "usage": {
+        "image_requests": 1,
+        "label_model_version": "3.0",
+        "mapping_version": "2026-10-10.4"
+      },
+      "status": "complete",
+      "clarification": "metal",
+      "options": [
+        "steel-utensil",
+        "aluminium-can"
+      ],
+      "latency_ms": 147
+    }
+  ]
+}

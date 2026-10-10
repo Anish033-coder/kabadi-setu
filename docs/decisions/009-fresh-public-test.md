@@ -18,3 +18,5 @@ The short list (mapping `2026-10-10.4`, decision 008) was measured on only 7 kno
 - From the trash class: chips or snack packets are `wrapper`, food is `food`, anything else `unknown`.
 
 **Run.** Rekognition `GENERAL_LABELS`, confidence 90, 512 px, one call per photo, through `eval/run.py` with the committed manifest `eval/public-fresh-sources.csv`. Reported as raw counts: named outright, right item offered (named or in the short list) out of the known items, and how many unsupported items got a list.
+
+**Result, added after the run.** Right item offered for 12 of 19 catalogue items; 3 named outright, none wrong; 9 of 11 unsupported items still received a list. Details in `eval/INTERNET_PHOTOS.md`. The labels were committed in `ccd0a70` before the run.

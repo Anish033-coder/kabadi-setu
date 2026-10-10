@@ -110,9 +110,9 @@ Authorisation uses [Cedar](https://www.cedarpolicy.com), AWS's open-source polic
 
 ## Evidence in numbers
 
-| 116 tests | ≈ $0.13 | 6 of 7 | 1 day |
+| 116 tests | ≈ $0.13 | 12 of 19 | 1 day |
 |---|---|---|---|
-| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | public held-out photos where the right item was offered; 2 of 7 when the AI had to name it ([evaluation](eval/INTERNET_PHOTOS.md)) | how long a photo lives in S3 |
+| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | catalogue items in a fresh test of 30 public photos where the right item was offered; Rekognition alone named 3, none wrong ([evaluation](eval/INTERNET_PHOTOS.md)) | how long a photo lives in S3 |
 
 ## Claims and the tests that check them
 
@@ -150,7 +150,7 @@ Checked against the live app on 10 October 2026.
 
 - **No collector has used it** or confirmed rates or minimum quantities, so the app asks for a quote. Every pickup so far is a test.
 - **No household timing trials** yet; the protocol is built in (`?trial=1`, [timing trials](docs/timing-trials.md)).
-- **Photo accuracy is measured on public photos only.** On 10 held-out public photos, Rekognition named 2 of 7 known items on its own; with the short list, the right item was offered for 6 of 7. Items the app doesn't support also got a list, so "None of these" stays on screen. I also tried it on photos from my home ([evaluation](eval/INTERNET_PHOTOS.md)).
+- **Photo accuracy is measured on public photos only.** In a fresh test of 30 public photos (19 of them catalogue items), Rekognition named 3 items on its own and never a wrong one; with the short list, the right item was offered for 12 of 19. Snack wrappers are never in the list, and 9 of the 11 unsupported items still got one, so "None of these" stays on screen. I also tried it on photos from my home ([evaluation](eval/INTERNET_PHOTOS.md)).
 - **Bedrock is blocked** on my India-billed account; a support case is open.
 - A collection report is not proof of recycling, and a collector link is not identity verification.
 
