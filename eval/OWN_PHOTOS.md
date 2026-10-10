@@ -33,7 +33,7 @@ After the result above was recorded, the eight photos were moved to the **dev** 
 | Cardboard | Box (at 1024 px it was also labelled Cardboard) |
 | Rusty axe head and iron weight | Ammunition, Grenade, Weapon |
 
-Mapping **`2026-10-10.4`** turns label families (paper, box, bottle, plastic, can, container, metal, electronics) into **up to four catalogue choices**, ranked by how many families agree; the person picks one or searches. It was designed only on dev data (these eight photos and the 20 TrashNet dev photos), then frozen in commit `da7f88c`.
+Mapping **`2026-10-10.4`** turns label families (paper, box, bottle, plastic, can, container, metal, electronics) into **up to four catalogue choices**, ranked by how many families agree; the person picks one or searches. It was designed only on dev data (these eight photos and the 20 TrashNet dev photos), then frozen in commit `aa9f5f7`.
 
 | Set | Use | Named outright | Right item offered (named or in the list) | Unsupported items given a list |
 |---|---|---|---|---|
