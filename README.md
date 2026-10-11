@@ -13,6 +13,7 @@
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/f0JD8LPav94"><b>Demo video (2:56)</b></a> ·
   <a href="https://main.d364mryjpwg6jn.amplifyapp.com/"><b>Live app</b></a> ·
   <a href="#try-it-in-five-minutes"><b>Judge's five-minute tour</b></a> ·
   <a href="#claims-and-the-tests-that-check-them"><b>Claims and proof</b></a> ·
