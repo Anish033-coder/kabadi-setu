@@ -38,7 +38,7 @@
 | **Who uses it** | Households (email sign-in) and kabadiwalas (a private link, no account). |
 | **Built with** | React + TypeScript on Amplify · Python 3.14 on Lambda · DynamoDB · Rekognition · Cognito · Cedar · AWS SAM. Full list: [Tech stack](#tech-stack). |
 | **Where the AI sits** | Amazon Rekognition looks at the photo. Code turns its labels into one catalogue item or a short list of up to four, and the person chooses. The model has no tools: it cannot add to a basket, decide a stream or change a pickup. Items sorted before are one tap with no AI call. |
-| **What's proven** | Live on AWS in Mumbai. 116 automated tests, including double taps and a cancel racing an accept, run against DynamoDB Local. A measured photo scan costs about $0.0013. |
+| **What's proven** | Live on AWS in Mumbai. 129 automated tests, including double taps and a cancel racing an accept, run against DynamoDB Local. A measured photo scan costs about $0.0013. |
 | **What isn't** | No collector has used it or confirmed rates; every pickup so far is a test. No household timing trials yet. Bedrock is blocked on my account. Details: [Not yet](#not-yet). |
 
 ## Try it in five minutes
@@ -60,7 +60,7 @@ flowchart TD
     F --> C[Cognito: email and password]
     F --> A[HTTP API: access-token authorizer]
     A --> L[Python Lambda arm64: ownership and Cedar checks]
-    F -->|size-limited upload| S[Private S3: photos deleted after one day]
+    F -->|size-limited upload| S[Private S3: photos expire after one day]
     L -->|one bounded read| S
     L -->|reserve daily quota first| D[DynamoDB: conditional transactions]
     L --> R[Recognizer interface]
@@ -88,7 +88,7 @@ flowchart TD
 | **Photos** | The browser shrinks each photo to 1024 px and re-saves it as JPEG, which drops metadata such as GPS. Pillow checks it again on the server; Amazon Rekognition suggests what it shows. |
 | **Messaging** | WhatsApp click-to-chat links (`wa.me`), sent from the household's own phone. |
 | **Infrastructure** | AWS SAM (CloudFormation), Amplify Hosting, S3, SSM Parameter Store, CloudWatch, AWS Budgets. |
-| **Testing** | pytest (109 tests) with DynamoDB Local in Docker; Node's built-in test runner (7 frontend tests); TypeScript type checks. |
+| **Testing** | pytest (122 tests) with DynamoDB Local in Docker; Node's built-in test runner (7 frontend tests); TypeScript type checks. |
 | **CI** | GitHub Actions: Python and frontend tests, IAM policy checks, DynamoDB Local integration and the production build. |
 
 ### AWS services, and why each one
@@ -100,7 +100,7 @@ flowchart TD
 | **Amazon API Gateway** (HTTP API) | Checks Cognito access tokens before any request reaches code | Cheapest API type, with a built-in JWT authorizer |
 | **AWS Lambda** (Python 3.14, arm64) | Rules, ownership checks, Cedar policies, pickup lifecycle | One Python backend runs locally and on Lambda; arm64 is cheaper |
 | **Amazon DynamoDB** | Baskets, requests, quotas; status, version, receipt and history change together | Conditional transactions make double taps and races safe without Step Functions |
-| **Amazon S3** | Private photo uploads | Size-limited presigned uploads; a lifecycle rule deletes photos after a day |
+| **Amazon S3** | Private photo uploads | Size-limited presigned uploads; a lifecycle rule expires photos after a day (S3 rounds to the next midnight UTC and removes expired objects in the background) |
 | **Amazon Rekognition** | Suggests what a photo shows | Works on my India-billed account; about $0.00125 per image |
 | **AWS Systems Manager Parameter Store** | Holds the secret that signs collector links | Kept out of code and the template |
 | **Amazon CloudWatch** · **AWS Budgets** | Logs kept 14 days; alerts at $1, $5 and $10 | Cost and behaviour stay visible |
@@ -111,9 +111,9 @@ Authorisation uses [Cedar](https://www.cedarpolicy.com), AWS's open-source polic
 
 ## Evidence in numbers
 
-| 116 tests | ≈ $0.13 | 12 of 19 | 1 day |
+| 129 tests | ≈ $0.13 | 12 of 19 | 1 day |
 |---|---|---|---|
-| 109 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | catalogue items in a fresh test of 30 public photos where the right item was offered; Rekognition alone named 3, none wrong ([evaluation](eval/INTERNET_PHOTOS.md)) | how long a photo lives in S3 |
+| 122 backend (races run on DynamoDB Local) + 7 frontend | per 100 photo scans at Mumbai prices; manual sorting costs almost nothing ([cost](docs/cost.md)) | catalogue items in a fresh test of 30 public photos where the right item was offered; Rekognition alone named 3, none wrong ([evaluation](eval/INTERNET_PHOTOS.md)) | until a photo expires in S3 (removal then happens in the background) |
 
 ## Claims and the tests that check them
 
@@ -132,6 +132,7 @@ Each row names the test that would fail if the claim were false. Tests are in [`
 | An accepted pickup gets its own seven-day window † | `test_accepted_request_can_be_collected_after_the_reply_window`, `test_accepted_request_expires_after_the_pickup_window` |
 | Uploads are size-bounded; photos carrying metadata such as GPS are rejected | `test_upload_policy_is_size_bounded_and_exact_key`, `test_metadata_rejected` |
 | The Lambda's permissions stay scoped to this project | `test_source_and_transformed_iam_are_scoped`, `test_detect_labels_exception_cannot_widen` |
+| A malformed item ID or action gets a clear 400, never a server error | `test_invalid_item_id_is_a_client_error`, `test_invalid_basket_id_is_a_client_error`, `test_invalid_action_is_a_client_error` |
 
 Not tests, but checkable: photo deletion is the S3 lifecycle rule in [`template.yaml`](template.yaml); the short list was designed on development photos only and frozen in commit `c720603` before the held-out run ([decision 008](docs/decisions/008-short-list.md)).
 

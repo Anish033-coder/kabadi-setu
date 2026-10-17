@@ -39,7 +39,7 @@ class Service:
         self.items = {item['id']: item for item in catalogue['items']}
 
     def route(self, item_id, answers):
-        item = self.items.get(item_id)
+        item = self.items.get(item_id) if isinstance(item_id, str) else None
         if not item:
             raise Problem(400, 'Choose an item from the catalogue.')
         if not isinstance(answers, dict):
@@ -59,7 +59,8 @@ class Service:
         for row in rows:
             if not isinstance(row, dict):
                 raise Problem(400, 'Invalid basket entry.')
-            item = self.items.get(row.get('id'))
+            item_id = row.get('id')
+            item = self.items.get(item_id) if isinstance(item_id, str) else None
             quantity = row.get('quantity')
             if not item or item['id'] in seen or type(quantity) is not int or not 1 <= quantity <= 99:
                 raise Problem(400, 'Choose distinct items with counts from 1 to 99.')
@@ -147,7 +148,9 @@ class Service:
     def act(self, request_id, body, key, owner=None, token=None):
         from .access import check_access
         doc, source = self.authorised(request_id, owner, token)
-        check_access(doc, source, body.get('action', ''), owner)
+        if not isinstance(body.get('action'), str):
+            raise Problem(400, 'Choose a valid action.')
+        check_access(doc, source, body['action'], owner)
         receipt_key = f'ACTION#{request_id}#{source}#{action_key(key)}'
         fingerprint = digest(json.dumps({'action': body.get('action'), 'version': body.get('version')}, sort_keys=True))
         old = self.repo.get(receipt_key)

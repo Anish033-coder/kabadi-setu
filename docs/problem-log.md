@@ -57,3 +57,7 @@ Prepared a no-call Bedrock comparison preview, private phone-photo preparation w
 ## October 10 — Bedrock re-checked before submission
 
 Account plan: PAID, active. `get-foundation-model-availability` for Nova Lite in ap-south-1: `NOT_AUTHORIZED` (Claude 3 Haiku and Llama 3 8B the same). One Converse probe each to `apac.amazon.nova-lite-v1:0` (ap-south-1), `us.amazon.nova-lite-v1:0` and `amazon.nova-lite-v1:0` (us-east-1): all `ValidationException: Operation not allowed`. Still an account-level block awaiting AWS Support; Rekognition stays the live provider. Switching back is one parameter (`RecognitionProvider=bedrock`) plus a fresh evaluation before any accuracy claim.
+
+## October 17 — malformed input
+
+Sending a list or an object where the API expects an item ID (for example `["newspaper"]` instead of `"newspaper"`), or a non-text pickup action, made the catalogue lookup raise an internal error, so the API answered with a 500. The service now checks these are strings first and replies with a 400 validation message instead. Thirteen new cases in `tests/test_input_validation.py` cover item IDs, basket entries and actions; eleven of them failed before the fix.
